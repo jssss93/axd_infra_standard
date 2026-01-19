@@ -14,12 +14,13 @@
 │   │   └── pe/               # Private Endpoints + Private DNS Zones 통합
 │   ├── compute/              # 컴퓨팅 리소스
 │   │   └── container-apps/   # Container Apps, VM, Log Analytics
-│   └── services/             # PaaS 서비스들
+│   ├── data/                 # 데이터 저장소 서비스들
+│   │   ├── acr/              # Container Registry
+│   │   ├── keyvault/         # Key Vault
+│   │   ├── cosmos/           # Cosmos DB
+│   │   └── postgres/         # PostgreSQL
+│   └── services/             # AI 서비스들
 │       ├── infra/            # 통합 모듈 (모든 서비스 통합 관리)
-│       ├── acr/              # Container Registry
-│       ├── keyvault/         # Key Vault
-│       ├── cosmos/           # Cosmos DB
-│       ├── postgres/         # PostgreSQL
 │       ├── foundry/          # AI Foundry
 │       └── openai/           # OpenAI
 ├── env/                       # 환경별 배포 설정
@@ -434,19 +435,25 @@ Azure Container Apps, Virtual Machines, 그리고 Log Analytics Workspace를 관
 - `container_apps`: Container App 객체 맵
 - `virtual_machine_ids`: Virtual Machine ID 맵
 
+### Data 모듈
+
+데이터 저장소 서비스들을 관리하는 모듈들입니다.
+
+**지원 서비스:**
+- Container Registry (ACR) - `modules/data/acr/`
+- Key Vault - `modules/data/keyvault/`
+- Cosmos DB - `modules/data/cosmos/`
+- PostgreSQL - `modules/data/postgres/`
+
 ### Services 모듈
 
 #### 통합 모듈 (`modules/services/infra/`)
 
-모든 PaaS 서비스를 통합하여 관리하는 모듈입니다. 개별 서비스 모듈들을 내부적으로 호출합니다.
+모든 PaaS 서비스를 통합하여 관리하는 모듈입니다. 데이터 저장소 서비스와 AI 서비스 모듈들을 내부적으로 호출합니다.
 
 **지원 서비스:**
-- Container Registry (ACR)
-- Key Vault
-- Cosmos DB
-- PostgreSQL
-- AI Foundry
-- OpenAI
+- **데이터 저장소**: Container Registry (ACR), Key Vault, Cosmos DB, PostgreSQL
+- **AI 서비스**: AI Foundry, OpenAI
 
 **입력 변수:**
 각 서비스별로 `{service}_enabled`, `{service}_name`, `{service}_config` 형태의 변수를 제공합니다.
@@ -457,10 +464,14 @@ Azure Container Apps, Virtual Machines, 그리고 Log Analytics Workspace를 관
 #### 개별 서비스 모듈
 
 각 서비스는 독립적으로도 사용할 수 있습니다:
-- `modules/services/acr/`: Container Registry
-- `modules/services/keyvault/`: Key Vault
-- `modules/services/cosmos/`: Cosmos DB
-- `modules/services/postgres/`: PostgreSQL
+
+**데이터 저장소 서비스:**
+- `modules/data/acr/`: Container Registry
+- `modules/data/keyvault/`: Key Vault
+- `modules/data/cosmos/`: Cosmos DB
+- `modules/data/postgres/`: PostgreSQL
+
+**AI 서비스:**
 - `modules/services/foundry/`: AI Foundry
 - `modules/services/openai/`: OpenAI
 

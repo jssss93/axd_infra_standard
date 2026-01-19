@@ -5,7 +5,7 @@ data "azurerm_client_config" "current" {}
 module "acr" {
   count = var.container_registry_enabled && var.container_registry_config != null ? 1 : 0
 
-  source = "../acr"
+  source = "../../data/acr"
 
   name                = var.container_registry_name
   resource_group_name = var.resource_group_name
@@ -28,7 +28,7 @@ module "acr" {
 module "keyvault" {
   count = var.key_vault_enabled && var.key_vault_config != null ? 1 : 0
 
-  source = "../keyvault"
+  source = "../../data/keyvault"
 
   name                = var.key_vault_name
   resource_group_name = var.resource_group_name
@@ -285,7 +285,7 @@ resource "azurerm_key_vault_secret" "foundry_endpoint" {
 module "cosmos" {
   count = var.cosmos_db_enabled && var.cosmos_db_config != null ? 1 : 0
 
-  source = "../cosmos"
+  source = "../../data/cosmos"
 
   name                = var.cosmos_db_name
   resource_group_name = var.resource_group_name
@@ -317,7 +317,7 @@ module "cosmos" {
 module "postgres" {
   count = var.postgresql_enabled && var.postgresql_config != null ? 1 : 0
 
-  source = "../postgres"
+  source = "../../data/postgres"
 
   name                = var.postgresql_name
   resource_group_name = var.resource_group_name

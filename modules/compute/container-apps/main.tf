@@ -25,8 +25,12 @@ resource "azurerm_container_app_environment" "this" {
   tags = var.tags
 
   # infrastructure_resource_group_name은 읽기 전용 속성이므로 변경 무시
+  # workload_profile은 Azure가 기본값(Consumption)으로 자동 설정하므로 변경 무시
   lifecycle {
-    ignore_changes = [infrastructure_resource_group_name]
+    ignore_changes = [
+      infrastructure_resource_group_name,
+      workload_profile
+    ]
   }
 }
 
@@ -106,6 +110,11 @@ resource "azurerm_container_app" "this" {
   }
 
   tags = merge(var.tags, lookup(each.value, "tags", {}))
+
+  # workload_profile_name은 Azure가 기본값(Consumption)으로 자동 설정하므로 변경 무시
+  lifecycle {
+    ignore_changes = [workload_profile_name]
+  }
 }
 
 # Note: RBAC role assignment for Container Apps to access Key Vault should be done separately
