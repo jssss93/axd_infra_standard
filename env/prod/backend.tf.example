@@ -1,0 +1,11 @@
+terraform {
+  backend "azurerm" {
+    # Backend 설정 예시
+    # 실제 사용 시 terraform init -backend-config=backend.tfvars 사용 권장
+    
+    # resource_group_name  = "rg-terraform-state"
+    # storage_account_name = "stterraformstate"
+    # container_name       = "tfstate"
+    # key                  = "dev.terraform.tfstate"
+  }
+}

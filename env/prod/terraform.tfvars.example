@@ -1,0 +1,58 @@
+# Azure Subscription
+subscription_id = "00000000-0000-0000-0000-000000000000"  # Azure Subscription ID (선택)
+
+# 네이밍 규칙 변수 (필수)
+environment  = "prod"
+project_name = "tmp"
+purpose      = "agent"  # 용도/기능: main, dns, agent, cicd, search, nl2sql, chatbot, front, backend 등
+
+# 네이밍 규칙 변수 (선택)
+asset_management = "cae"  # 자산관리: resolver, pe, gitlab, runner, agw, cae, vm, aca 등
+sequence_number  = "001"  # 순번: 001, 002 등
+
+# Azure 리전
+location = "koreacentral"
+
+# 네트워크 설정
+vnet_address_space = ["10.2.0.0/16"]
+
+subnets = {
+  app = {
+    name             = "subnet-app"
+    address_prefixes = ["10.2.1.0/24"]
+  }
+  db = {
+    name             = "subnet-db"
+    address_prefixes = ["10.2.2.0/24"]
+  }
+}
+
+# Container Apps 설정
+container_apps_subnet_id = "app"
+
+container_apps = {
+  webapp = {
+    name         = "webapp"
+    image        = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
+    cpu          = 1.0
+    memory       = "2.0Gi"
+    min_replicas = 2
+    max_replicas = 10
+    env_vars = {
+      ENVIRONMENT = "production"
+    }
+    ingress = {
+      external_enabled = true
+      target_port      = 80
+    }
+  }
+}
+
+# 공통 태그
+common_tags = {
+  Team       = "platform"
+  CostCenter = "engineering"
+}
+
+# 추가 태그
+tags = {}

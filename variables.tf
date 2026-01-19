@@ -1,0 +1,625 @@
+variable "resource_group_name" {
+  description = "The name of the resource group"
+  type        = string
+  default     = "rg-example"
+}
+
+variable "location" {
+  description = "The Azure region where resources will be created"
+  type        = string
+  default     = "koreacentral"
+}
+
+variable "vnet_name" {
+  description = "The name of the virtual network"
+  type        = string
+  default     = "vnet-example"
+}
+
+variable "vnet_address_space" {
+  description = "The address space for the virtual network"
+  type        = list(string)
+  default     = ["10.0.0.0/16"]
+}
+
+variable "dns_servers" {
+  description = "List of DNS servers IP addresses"
+  type        = list(string)
+  default     = []
+}
+
+variable "subnets" {
+  description = "Map of subnet configurations. Key is used as asset_management for naming convention. If name is not provided, it will be auto-generated using naming convention."
+  type = map(object({
+    name                        = optional(string) # 지정하지 않으면 네이밍 규칙 자동 적용
+    address_prefixes            = list(string)
+    network_security_group_id   = optional(string)
+    route_table_id              = optional(string)
+    service_endpoints           = optional(list(string))
+    service_endpoint_policy_ids = optional(list(string))
+    delegation = optional(object({
+      name = string
+      service_delegation = object({
+        name    = string
+        actions = optional(list(string))
+      })
+    }))
+  }))
+  default = {
+    subnet1 = {
+      address_prefixes = ["10.0.1.0/24"]
+    }
+    subnet2 = {
+      address_prefixes = ["10.0.2.0/24"]
+    }
+  }
+}
+
+variable "container_app_environment_name" {
+  description = "The name of the Container App Environment"
+  type        = string
+  default     = "cae-example"
+}
+
+variable "container_apps_subnet_id" {
+  description = "The subnet key name for Container Apps Environment infrastructure (optional)"
+  type        = string
+  default     = null
+}
+
+variable "log_analytics_workspace_id" {
+  description = "Existing Log Analytics Workspace ID (optional, if not provided, one will be created)"
+  type        = string
+  default     = null
+}
+
+variable "log_analytics_workspace_name" {
+  description = "Name for the Log Analytics Workspace (optional, if not provided, will be generated)"
+  type        = string
+  default     = null
+}
+
+variable "log_analytics_workspace_suffix" {
+  description = "Suffix for auto-generated Log Analytics Workspace name"
+  type        = string
+  default     = "laws"
+}
+
+variable "log_analytics_workspace_sku" {
+  description = "SKU for the Log Analytics Workspace"
+  type        = string
+  default     = "PerGB2018"
+}
+
+variable "log_analytics_retention_days" {
+  description = "Log Analytics Workspace retention in days"
+  type        = number
+  default     = 30
+}
+
+variable "container_apps" {
+  description = "Map of Container App configurations. If name is not provided, it will be auto-generated using naming convention."
+  type = map(object({
+    name          = optional(string)  # 명명규칙이 적용되면 자동 생성됨
+    image         = string
+    cpu           = optional(number, 0.25)
+    memory        = optional(string, "0.5Gi")
+    min_replicas  = optional(number, 0)
+    max_replicas  = optional(number, 10)
+    revision_mode = optional(string, "Single")
+    env_vars      = optional(map(string), {})
+    secrets = optional(list(object({
+      name        = string
+      secret_name = string
+    })), [])
+    ingress = optional(object({
+      external_enabled = optional(bool, true)
+      target_port      = number
+      transport        = optional(string, "auto")
+      traffic_weight = optional(object({
+        percentage      = number
+        latest_revision = optional(bool, true)
+      }))
+    }))
+    tags = optional(map(string), {})
+  }))
+  default = {}
+}
+
+variable "virtual_machines" {
+  description = "Map of Virtual Machine configurations"
+  type = map(object({
+    name                          = string
+    size                          = string
+    subnet_id                     = string  # Subnet key name (e.g., "vm")
+    os_type                       = optional(string, "Linux")  # Linux or Windows
+    admin_username                = string
+    admin_password                 = optional(string)  # Required for Windows
+    admin_ssh_key                 = optional(string)  # Required for Linux
+    private_ip_address            = optional(string)
+    private_ip_address_allocation = optional(string, "Dynamic")
+    public_ip_enabled             = optional(bool, false)
+    public_ip_allocation_method   = optional(string, "Static")
+    public_ip_sku                 = optional(string, "Standard")
+    os_disk_caching               = optional(string, "ReadWrite")
+    os_disk_storage_account_type  = optional(string, "Premium_LRS")
+    os_disk_size_gb               = optional(number)
+    source_image_reference = object({
+      publisher = string
+      offer     = string
+      sku       = string
+      version   = optional(string, "latest")
+    })
+    identity_type                       = optional(string)
+    identity_ids                        = optional(list(string), [])
+    boot_diagnostics_storage_account_uri = optional(string)
+    tags                                = optional(map(string), {})
+  }))
+  default = null
+}
+
+variable "common_tags" {
+  description = "Common tags to be merged with all resources (e.g., Environment, Project, Team)"
+  type        = map(string)
+  default = {
+    Environment = "dev"
+  }
+}
+
+variable "tags" {
+  description = "Additional tags to assign to all resources (will be merged with common_tags)"
+  type        = map(string)
+  default     = {}
+}
+
+# 네이밍 규칙 변수
+variable "project_name" {
+  description = "프로젝트 이름 (필수)"
+  type        = string
+  default     = null
+}
+
+variable "environment" {
+  description = "환경 이름 (필수) - 예: dev, staging, prod, nw, devops"
+  type        = string
+  default     = null
+}
+
+variable "purpose" {
+  description = "용도/기능 (필수) - 예: main, dns, agent, cicd, search, nl2sql, chatbot, front, backend"
+  type        = string
+  default     = null
+}
+
+variable "asset_management" {
+  description = "자산관리 (선택) - 예: resolver, pe, gitlab, runner, appgw, cae, vm, aca"
+  type        = string
+  default     = null
+}
+
+variable "sequence_number" {
+  description = "순번 (선택) - 예: 001, 002"
+  type        = string
+  default     = null
+}
+
+variable "subscription_id" {
+  description = "Azure Subscription ID (선택, 지정하지 않으면 기본 subscription 사용)"
+  type        = string
+  default     = null
+}
+
+# Application Gateway 변수
+variable "application_gateway_enabled" {
+  description = "Whether to create Application Gateway"
+  type        = bool
+  default     = false
+}
+
+variable "application_gateway_name" {
+  description = "Application Gateway 이름 (선택, 지정하지 않으면 네이밍 규칙 자동 적용)"
+  type        = string
+  default     = null
+}
+
+variable "application_gateway_subnet_id" {
+  description = "Application Gateway용 서브넷 키 이름"
+  type        = string
+  default     = null
+}
+
+variable "application_gateway_config" {
+  description = "Application Gateway 설정"
+  type = object({
+    sku_name                    = optional(string, "Standard_v2")
+    sku_tier                    = optional(string, "Standard_v2")
+    capacity                    = optional(number, 2)
+    public_ip_enabled           = optional(bool, true)
+    public_ip_name              = optional(string)
+    public_ip_allocation_method  = optional(string, "Static")
+    public_ip_sku                = optional(string, "Standard")
+    private_ip_address          = optional(string)
+    private_ip_address_allocation = optional(string, "Static")
+    auto_connect_container_apps  = optional(bool, true)  # Container Apps FQDN 자동 연결 여부
+    frontend_ports = optional(list(object({
+      name = string
+      port = number
+      })), [
+      {
+        name = "http"
+        port = 80
+      },
+      {
+        name = "https"
+        port = 443
+      }
+    ])
+    backend_address_pools = optional(list(object({
+      name         = string
+      fqdns        = optional(list(string))
+      ip_addresses = optional(list(string))
+    })), [])
+    backend_http_settings = optional(list(object({
+      name                                = string
+      cookie_based_affinity               = optional(string, "Disabled")
+      path                                = optional(string, "/")
+      port                                = number
+      protocol                            = string
+      request_timeout                     = optional(number, 20)
+      probe_name                          = optional(string)
+      host_name                           = optional(string)
+      pick_host_name_from_backend_address = optional(bool, false)
+    })), [])
+    http_listeners = optional(list(object({
+      name                           = string
+      frontend_ip_configuration_name = string
+      frontend_port_name             = string
+      protocol                       = string
+      host_name                      = optional(string)
+      ssl_certificate_name           = optional(string)
+    })), [])
+    request_routing_rules = optional(list(object({
+      name                        = string
+      rule_type                   = string
+      http_listener_name          = string
+      priority                    = optional(number)  # 1-20000 사이의 값
+      backend_address_pool_name   = optional(string)
+      backend_http_settings_name  = optional(string)
+      redirect_configuration_name = optional(string)
+      rewrite_rule_set_name       = optional(string)
+      url_path_map_name           = optional(string)
+    })), [])
+    ssl_certificates = optional(list(object({
+      name                = string
+      data                = optional(string)
+      password            = optional(string)
+      key_vault_secret_id = optional(string)
+    })), [])
+    probes = optional(list(object({
+      name                                      = string
+      protocol                                  = string
+      path                                      = string
+      host                                      = optional(string)
+      interval                                  = optional(number, 30)
+      timeout                                   = optional(number, 30)
+      unhealthy_threshold                       = optional(number, 3)
+      minimum_servers                           = optional(number, 0)
+      pick_host_name_from_backend_http_settings = optional(bool, false)
+    })), [])
+  })
+  default = null
+}
+
+# Container Registry 변수
+variable "container_registry_enabled" {
+  description = "Whether to create Container Registry"
+  type        = bool
+  default     = false
+}
+
+variable "container_registry_name" {
+  description = "Container Registry 이름 (선택, 지정하지 않으면 네이밍 규칙 자동 적용)"
+  type        = string
+  default     = null
+}
+
+variable "container_registry_config" {
+  description = "Container Registry 설정"
+  type = object({
+    sku                        = optional(string, "Basic")
+    admin_enabled              = optional(bool, false)
+    public_network_access_enabled = optional(bool, true)
+    georeplications = optional(list(object({
+      location                  = string
+      regional_endpoint_enabled = optional(bool, true)
+      zone_redundancy_enabled   = optional(bool, false)
+      tags                      = optional(map(string), {})
+    })), null)
+    network_rule_set = optional(object({
+      default_action = string
+      ip_rules = optional(list(object({
+        action   = string
+        ip_range = string
+      })), [])
+      virtual_networks = optional(list(object({
+        action    = string
+        subnet_id = string
+      })), [])
+    }), null)
+    retention_policy = optional(object({
+      days    = number
+      enabled = optional(bool, true)
+    }), null)
+    trust_policy = optional(object({
+      enabled = bool
+    }), null)
+    encryption = optional(object({
+      enabled            = bool
+      key_vault_key_id   = optional(string)
+      identity_client_id = optional(string)
+    }), null)
+    identity_type = optional(string, "SystemAssigned")
+    identity_ids  = optional(list(string), [])
+  })
+  default = null
+}
+
+# Key Vault 변수
+variable "key_vault_enabled" {
+  description = "Whether to create Key Vault"
+  type        = bool
+  default     = false
+}
+
+variable "key_vault_name" {
+  description = "Key Vault 이름 (선택, 지정하지 않으면 네이밍 규칙 자동 적용)"
+  type        = string
+  default     = null
+}
+
+variable "key_vault_config" {
+  description = "Key Vault 설정"
+  type = object({
+    tenant_id                      = optional(string)
+    sku_name                       = optional(string, "standard")
+    enabled_for_deployment        = optional(bool, false)
+    enabled_for_disk_encryption    = optional(bool, false)
+    enabled_for_template_deployment = optional(bool, false)
+    enable_rbac_authorization     = optional(bool, true)
+    public_network_access_enabled  = optional(bool, true)
+    purge_protection_enabled       = optional(bool, false)
+    soft_delete_retention_days     = optional(number, 90)
+    network_acls = optional(object({
+      default_action             = string
+      bypass                     = optional(string, "AzureServices")
+      ip_rules                   = optional(list(string), [])
+      virtual_network_subnet_ids = optional(list(string), [])
+    }), null)
+    contacts = optional(list(object({
+      email = string
+      name  = optional(string)
+      phone = optional(string)
+    })), null)
+    access_policies = optional(map(object({
+      object_id               = string
+      key_permissions         = optional(list(string), [])
+      secret_permissions      = optional(list(string), [])
+      certificate_permissions = optional(list(string), [])
+      storage_permissions     = optional(list(string), [])
+    })), {})
+  })
+  default = null
+}
+
+# Cosmos DB 변수
+variable "cosmos_db_enabled" {
+  description = "Whether to create Cosmos DB"
+  type        = bool
+  default     = false
+}
+
+variable "cosmos_db_name" {
+  description = "Cosmos DB 이름 (선택, 지정하지 않으면 네이밍 규칙 자동 적용)"
+  type        = string
+  default     = null
+}
+
+variable "cosmos_db_config" {
+  description = "Cosmos DB 설정"
+  type = object({
+    offer_type                      = optional(string, "Standard")
+    kind                            = optional(string, "GlobalDocumentDB")
+    consistency_level               = optional(string, "Session")
+    max_interval_in_seconds         = optional(number, 5)
+    max_staleness_prefix           = optional(number, 100)
+    capabilities                    = optional(list(string), null)
+    geo_locations = list(object({
+      location          = string
+      failover_priority = number
+      zone_redundant    = optional(bool, false)
+    }))
+    backup = optional(object({
+      type                = string
+      interval_in_minutes = optional(number)
+      retention_in_hours  = optional(number)
+      storage_redundancy  = optional(string)
+    }), null)
+    cors_rule = optional(object({
+      allowed_origins    = list(string)
+      allowed_methods    = optional(list(string), [])
+      allowed_headers    = optional(list(string), [])
+      exposed_headers    = optional(list(string), [])
+      max_age_in_seconds = optional(number)
+    }), null)
+    is_virtual_network_filter_enabled = optional(bool, false)
+    virtual_network_rules = optional(list(object({
+      id                                   = string
+      ignore_missing_vnet_service_endpoint = optional(bool, false)
+    })), [])
+    ip_range_filter                   = optional(string, null)
+    public_network_access_enabled     = optional(bool, true)
+    enable_automatic_failover         = optional(bool, false)
+    enable_multiple_write_locations  = optional(bool, false)
+    access_key_metadata_writes_enabled = optional(bool, true)
+    local_authentication_disabled     = optional(bool, false)
+    identity_type                     = optional(string, null)
+    identity_ids                      = optional(list(string), [])
+    databases = optional(map(object({
+      name         = string
+      throughput   = optional(number)
+      autoscale_settings = optional(object({
+        max_throughput = number
+      }))
+      tags = optional(map(string), {})
+    })), {})
+    containers = optional(map(object({
+      name              = string
+      database_name     = string
+      partition_key_path = string
+      throughput        = optional(number)
+      autoscale_settings = optional(object({
+        max_throughput = number
+      }))
+      indexing_policy = optional(object({
+        indexing_mode  = optional(string, "consistent")
+        included_paths  = optional(list(string), [])
+        excluded_paths  = optional(list(string), [])
+      }))
+      unique_keys = optional(list(object({
+        paths = list(string)
+      })), [])
+      tags = optional(map(string), {})
+    })), {})
+  })
+  default = null
+}
+
+# PostgreSQL 변수
+variable "postgresql_enabled" {
+  description = "Whether to create PostgreSQL"
+  type        = bool
+  default     = false
+}
+
+variable "postgresql_name" {
+  description = "PostgreSQL 이름 (선택, 지정하지 않으면 네이밍 규칙 자동 적용)"
+  type        = string
+  default     = null
+}
+
+variable "postgresql_config" {
+  description = "PostgreSQL 설정"
+  type = object({
+    server_version      = optional(string, "14")
+    administrator_login    = string
+    administrator_password  = string
+    sku_name             = optional(string, "B_Standard_B1ms")
+    storage_mb           = optional(number, 32768)
+    backup_retention_days = optional(number, 7)
+    geo_redundant_backup_enabled = optional(bool, false)
+    public_network_access_enabled = optional(bool, true)
+    maintenance_window = optional(object({
+      day_of_week  = number
+      start_hour   = number
+      start_minute = optional(number, 0)
+    }), null)
+    high_availability = optional(object({
+      mode                      = string
+      standby_availability_zone = optional(string)
+    }), null)
+    identity_type        = optional(string, null)
+    identity_ids         = optional(list(string), [])
+    firewall_rules = optional(map(object({
+      name             = string
+      start_ip_address = string
+      end_ip_address   = string
+    })), {})
+    databases = optional(map(object({
+      name      = string
+      charset   = optional(string, "UTF8")
+      collation = optional(string, "en_US.utf8")
+      tags      = optional(map(string), {})
+    })), {})
+    server_configurations = optional(map(string), {})
+  })
+  default = null
+}
+
+# AI Foundry 변수
+variable "foundry_enabled" {
+  description = "Whether to create AI Foundry resources"
+  type        = bool
+  default     = false
+}
+
+variable "foundry_name" {
+  description = "AI Foundry 이름 (선택, 지정하지 않으면 네이밍 규칙 자동 적용)"
+  type        = string
+  default     = null
+}
+
+variable "foundry_config" {
+  description = "AI Foundry 설정"
+  type = object({
+    create_cognitive_account     = optional(bool, true)
+    cognitive_account_kind       = optional(string, "OpenAI")
+    cognitive_account_sku        = optional(string, "S0")
+    public_network_access_enabled = optional(bool, true)
+    identity_type                = optional(string, null)
+    identity_ids                 = optional(list(string), [])
+    foundry_services             = optional(map(any), null)
+  })
+  default = null
+}
+
+# OpenAI 변수
+variable "openai_enabled" {
+  description = "Whether to create OpenAI"
+  type        = bool
+  default     = false
+}
+
+variable "openai_name" {
+  description = "OpenAI 이름 (선택, 지정하지 않으면 네이밍 규칙 자동 적용)"
+  type        = string
+  default     = null
+}
+
+variable "openai_config" {
+  description = "OpenAI 설정"
+  type = object({
+    sku_name                    = optional(string, "S0")
+    public_network_access_enabled = optional(bool, true)
+    identity_type               = optional(string, null)
+    identity_ids                = optional(list(string), [])
+    deployments = optional(map(object({
+      name                 = string
+      model_name           = string
+      model_format         = optional(string, "OpenAI")
+      model_version        = optional(string)
+      rai_policy_name      = optional(string)
+      version_upgrade_option = optional(string, "AutoUpgrade")
+      scale = object({
+        type     = optional(string, "Standard")
+        capacity = optional(number)
+        family   = optional(string)
+        size     = optional(string)
+        tier     = optional(string)
+      })
+    })), {})
+  })
+  default = null
+}
+
+# Private Endpoints 변수
+variable "private_endpoints_enabled" {
+  description = "Whether to create Private Endpoints for PaaS services (Key Vault, Cosmos DB, PostgreSQL, ACR)"
+  type        = bool
+  default     = false
+}
+
+variable "private_endpoint_subnet_id" {
+  description = "Subnet key name for Private Endpoints (defaults to 'pe' if not specified)"
+  type        = string
+  default     = null
+}

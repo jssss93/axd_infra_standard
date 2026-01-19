@@ -1,0 +1,78 @@
+# Azure Subscription
+subscription_id = "00000000-0000-0000-0000-000000000000"  # Azure Subscription ID (선택)
+
+# 네이밍 규칙 변수 (필수)
+environment  = "dev"
+project_name = "tmp"
+purpose      = "agent"  # 용도/기능: main, dns, agent, cicd, search, nl2sql, chatbot, front, backend 등
+
+# 네이밍 규칙 변수 (선택)
+asset_management = "cae"  # 자산관리: resolver, pe, gitlab, runner, appgw, cae, vm, aca 등
+sequence_number  = "001"  # 순번: 001, 002 등
+
+# 리소스 이름 직접 지정 (선택, 지정하지 않으면 네이밍 규칙 자동 적용)
+# resource_group_name          = "tmp-dev-agent-rg"
+# vnet_name                    = "tmp-dev-agent-vnet"
+# container_app_environment_name = "tmp-dev-agent-cae-001"
+
+# Azure 리전
+location = "koreacentral"
+
+# 네트워크 설정
+vnet_address_space = ["10.0.0.0/16"]
+
+subnets = {
+  app = {
+    name             = "subnet-app"
+    address_prefixes = ["10.0.1.0/24"]
+  }
+  db = {
+    name             = "subnet-db"
+    address_prefixes = ["10.0.2.0/24"]
+  }
+}
+
+# Container Apps 설정
+container_apps_subnet_id = "cae"  # 위에서 정의한 subnet 키
+
+container_apps = {
+  search = {
+    name         = "tmp-dev-search-aca-001"  # 네이밍 규칙: {프로젝트}-{환경}-{용도}-aca-{순번}
+    image        = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
+    cpu          = 0.25
+    memory       = "0.5Gi"
+    min_replicas = 0
+    max_replicas = 2
+    env_vars = {
+      ENVIRONMENT = "dev"
+    }
+    ingress = {
+      external_enabled = true
+      target_port      = 80
+    }
+  }
+  nl2sql = {
+    name         = "tmp-dev-nl2sql-aca-001"
+    image        = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
+    cpu          = 0.25
+    memory       = "0.5Gi"
+    min_replicas = 0
+    max_replicas = 2
+    env_vars = {
+      ENVIRONMENT = "dev"
+    }
+    ingress = {
+      external_enabled = true
+      target_port      = 80
+    }
+  }
+}
+
+# 공통 태그
+common_tags = {
+  Team        = "platform"
+  CostCenter  = "engineering"
+}
+
+# 추가 태그
+tags = {}
