@@ -1,5 +1,5 @@
 variable "name" {
-  description = "The name of the Foundry AI resource"
+  description = "The name of the Azure AI Foundry hub"
   type        = string
 }
 
@@ -13,34 +13,26 @@ variable "location" {
   type        = string
 }
 
-variable "create_cognitive_account" {
-  description = "Whether to create a Cognitive Services account for Foundry"
-  type        = bool
-  default     = true
+variable "storage_account_id" {
+  description = "The ID of the Storage Account to use for the Foundry hub"
+  type        = string
 }
 
-variable "cognitive_account_kind" {
-  description = "The kind of Cognitive Services Account"
+variable "key_vault_id" {
+  description = "The ID of the Key Vault to use for the Foundry hub"
   type        = string
-  default     = "OpenAI"
-}
-
-variable "cognitive_account_sku" {
-  description = "The SKU name of the Cognitive Services Account"
-  type        = string
-  default     = "S0"
 }
 
 variable "public_network_access_enabled" {
-  description = "Whether public network access is allowed"
+  description = "Whether public network access is enabled for the Foundry hub"
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "identity_type" {
-  description = "The type of Managed Identity which should be assigned"
+  description = "The type of Managed Identity which should be assigned to the Foundry hub"
   type        = string
-  default     = null
+  default     = "SystemAssigned"
 }
 
 variable "identity_ids" {
@@ -49,9 +41,39 @@ variable "identity_ids" {
   default     = []
 }
 
-variable "foundry_services" {
-  description = "Map of Foundry AI services configuration (placeholder for future implementation)"
-  type        = map(any)
+variable "create_project" {
+  description = "Whether to create a Foundry project"
+  type        = bool
+  default     = false
+}
+
+variable "project_name" {
+  description = "The name of the Foundry project (if create_project is true)"
+  type        = string
+  default     = null
+}
+
+variable "project_identity_type" {
+  description = "The type of Managed Identity which should be assigned to the Foundry project"
+  type        = string
+  default     = null
+}
+
+variable "project_identity_ids" {
+  description = "A list of User Managed Identity IDs to be assigned to the project"
+  type        = list(string)
+  default     = []
+}
+
+variable "openai_resource_id" {
+  description = "The resource ID of the Azure OpenAI resource to connect to the Foundry project"
+  type        = string
+  default     = null
+}
+
+variable "openai_connection_name" {
+  description = "The name of the OpenAI connection in the Foundry project"
+  type        = string
   default     = null
 }
 

@@ -1,21 +1,11 @@
-# Microsoft Foundry AI Services
-# Note: Foundry services are typically provisioned through Azure Portal or Azure CLI
-# This module provides a structure for Foundry-related resources
-
-# Foundry AI Project (if available via Terraform provider)
-# Note: As of now, Foundry services may need to be provisioned via Azure CLI or Portal
-# This is a placeholder structure that can be extended when Terraform provider support is available
-
-resource "azurerm_cognitive_account" "foundry" {
-  count = var.create_cognitive_account ? 1 : 0
-
+# Azure AI Foundry Hub
+resource "azurerm_ai_foundry" "foundry" {
   name                = var.name
   location            = var.location
   resource_group_name = var.resource_group_name
-  kind                = var.cognitive_account_kind
-  sku_name            = var.cognitive_account_sku
-
-  public_network_access_enabled = var.public_network_access_enabled
+  storage_account_id  = var.storage_account_id
+  key_vault_id        = var.key_vault_id
+  public_network_access = var.public_network_access_enabled ? "Enabled" : "Disabled"
 
   dynamic "identity" {
     for_each = var.identity_type != null ? [1] : []
@@ -28,10 +18,21 @@ resource "azurerm_cognitive_account" "foundry" {
   tags = var.tags
 }
 
-# Foundry AI Services Configuration
-# Note: Actual Foundry service provisioning may require Azure CLI or Portal
-# This module structure can be extended when Terraform provider support is available
+# Azure AI Foundry Project (optional)
+resource "azurerm_ai_foundry_project" "project" {
+  count = var.create_project ? 1 : 0
 
-locals {
-  foundry_services = var.foundry_services != null ? var.foundry_services : {}
+  name               = var.project_name != null ? var.project_name : "${var.name}-project"
+  location           = var.location
+  ai_services_hub_id = azurerm_ai_foundry.foundry.id
+
+  dynamic "identity" {
+    for_each = var.project_identity_type != null ? [1] : []
+    content {
+      type         = var.project_identity_type
+      identity_ids = var.project_identity_ids
+    }
+  }
+
+  tags = var.tags
 }

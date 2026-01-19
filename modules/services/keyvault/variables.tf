@@ -42,7 +42,7 @@ variable "enabled_for_template_deployment" {
   default     = false
 }
 
-variable "enable_rbac_authorization" {
+variable "rbac_authorization_enabled" {
   description = "Boolean flag to specify whether Azure Key Vault uses Role Based Access Control (RBAC) for authorization of data actions"
   type        = bool
   default     = true

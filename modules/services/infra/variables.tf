@@ -65,7 +65,7 @@ variable "key_vault_config" {
     enabled_for_deployment         = optional(bool, false)
     enabled_for_disk_encryption   = optional(bool, false)
     enabled_for_template_deployment = optional(bool, false)
-    enable_rbac_authorization     = optional(bool, true)
+    rbac_authorization_enabled     = optional(bool, true)
     public_network_access_enabled = optional(bool, true)
     purge_protection_enabled       = optional(bool, false)
     soft_delete_retention_days    = optional(number, 90)
@@ -166,13 +166,33 @@ variable "foundry_name" {
 variable "foundry_config" {
   description = "AI Foundry configuration"
   type = object({
-    create_cognitive_account        = optional(bool, true)
-    cognitive_account_kind          = optional(string, "OpenAI")
-    cognitive_account_sku           = optional(string, "S0")
-    public_network_access_enabled  = optional(bool, true)
-    identity_type                   = optional(string, null)
+    # Storage Account 설정
+    storage_account_id                        = optional(string, null)
+    storage_account_name                      = optional(string, null)
+    storage_account_tier                      = optional(string, "Standard")
+    storage_account_replication_type          = optional(string, "LRS")
+    storage_account_public_network_access_enabled = optional(bool, false)
+    
+    # Foundry Hub 설정
+    public_network_access_enabled  = optional(bool, false)
+    identity_type                   = optional(string, "SystemAssigned")
     identity_ids                    = optional(list(string), [])
-    foundry_services                = optional(map(any), null)
+    
+    # Foundry Project 설정
+    create_project                 = optional(bool, false)
+    project_name                   = optional(string, null)
+    project_identity_type          = optional(string, null)
+    project_identity_ids           = optional(list(string), [])
+    
+    # Foundry Project OpenAI Connection 설정
+    openai_resource_id             = optional(string, null)
+    openai_connection_name         = optional(string, null)
+    
+    # Legacy fields (deprecated, kept for backward compatibility)
+    create_cognitive_account      = optional(bool, true)
+    cognitive_account_kind        = optional(string, "OpenAI")
+    cognitive_account_sku         = optional(string, "S0")
+    foundry_services              = optional(map(any), null)
   })
   default = null
 }

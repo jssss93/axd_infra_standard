@@ -29,19 +29,17 @@ output "key_vault_uri" {
 output "key_vault_secret_ids" {
   description = "Map of Key Vault secret names to their resource IDs"
   value = {
-    "acr-login-server"      = var.key_vault_enabled && var.key_vault_config != null && var.container_registry_enabled && var.container_registry_config != null && length(module.acr) > 0 ? azurerm_key_vault_secret.acr_login_server[0].id : null
-    "cosmosdb-endpoint"     = var.key_vault_enabled && var.key_vault_config != null && var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? azurerm_key_vault_secret.cosmosdb_endpoint[0].id : null
-    "cosmosdb-primary-key"  = var.key_vault_enabled && var.key_vault_config != null && var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? azurerm_key_vault_secret.cosmosdb_primary_key[0].id : null
-    "cosmosdb-secondary-key" = var.key_vault_enabled && var.key_vault_config != null && var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? azurerm_key_vault_secret.cosmosdb_secondary_key[0].id : null
-    "foundry-endpoint"      = var.key_vault_enabled && var.key_vault_config != null && var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? azurerm_key_vault_secret.foundry_endpoint[0].id : null
-    "foundry-primary-key"    = var.key_vault_enabled && var.key_vault_config != null && var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? azurerm_key_vault_secret.foundry_primary_key[0].id : null
-    "foundry-secondary-key"  = var.key_vault_enabled && var.key_vault_config != null && var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? azurerm_key_vault_secret.foundry_secondary_key[0].id : null
-    "openai-endpoint"       = var.key_vault_enabled && var.key_vault_config != null && var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? azurerm_key_vault_secret.openai_endpoint[0].id : null
-    "openai-primary-key"    = var.key_vault_enabled && var.key_vault_config != null && var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? azurerm_key_vault_secret.openai_primary_key[0].id : null
-    "openai-secondary-key"   = var.key_vault_enabled && var.key_vault_config != null && var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? azurerm_key_vault_secret.openai_secondary_key[0].id : null
-    "postgresql-password"   = var.key_vault_enabled && var.key_vault_config != null && var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 ? azurerm_key_vault_secret.postgresql_password[0].id : null
-    "postgresql-fqdn"       = var.key_vault_enabled && var.key_vault_config != null && var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 ? azurerm_key_vault_secret.postgresql_fqdn[0].id : null
-    "postgresql-admin-login" = var.key_vault_enabled && var.key_vault_config != null && var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 ? azurerm_key_vault_secret.postgresql_admin_login[0].id : null
+    "acr-login-server"      = var.key_vault_enabled && var.key_vault_config != null && var.container_registry_enabled && var.container_registry_config != null && length(module.acr) > 0 && length(azurerm_key_vault_secret.acr_login_server) > 0 ? azurerm_key_vault_secret.acr_login_server[0].id : null
+    "cosmosdb-endpoint"     = var.key_vault_enabled && var.key_vault_config != null && var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 && length(azurerm_key_vault_secret.cosmosdb_endpoint) > 0 ? azurerm_key_vault_secret.cosmosdb_endpoint[0].id : null
+    "cosmosdb-primary-key"  = var.key_vault_enabled && var.key_vault_config != null && var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 && length(azurerm_key_vault_secret.cosmosdb_primary_key) > 0 ? azurerm_key_vault_secret.cosmosdb_primary_key[0].id : null
+    "cosmosdb-secondary-key" = var.key_vault_enabled && var.key_vault_config != null && var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 && length(azurerm_key_vault_secret.cosmosdb_secondary_key) > 0 ? azurerm_key_vault_secret.cosmosdb_secondary_key[0].id : null
+    "foundry-endpoint"      = var.key_vault_enabled && var.key_vault_config != null && var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 && length(azurerm_key_vault_secret.foundry_endpoint) > 0 ? azurerm_key_vault_secret.foundry_endpoint[0].id : null
+    "openai-endpoint"       = var.key_vault_enabled && var.key_vault_config != null && var.openai_enabled && var.openai_config != null && length(module.openai) > 0 && length(azurerm_key_vault_secret.openai_endpoint) > 0 ? azurerm_key_vault_secret.openai_endpoint[0].id : null
+    "openai-primary-key"    = var.key_vault_enabled && var.key_vault_config != null && var.openai_enabled && var.openai_config != null && length(module.openai) > 0 && length(azurerm_key_vault_secret.openai_primary_key) > 0 ? azurerm_key_vault_secret.openai_primary_key[0].id : null
+    "openai-secondary-key"   = var.key_vault_enabled && var.key_vault_config != null && var.openai_enabled && var.openai_config != null && length(module.openai) > 0 && length(azurerm_key_vault_secret.openai_secondary_key) > 0 ? azurerm_key_vault_secret.openai_secondary_key[0].id : null
+    "postgresql-password"   = var.key_vault_enabled && var.key_vault_config != null && var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 && length(azurerm_key_vault_secret.postgresql_password) > 0 ? azurerm_key_vault_secret.postgresql_password[0].id : null
+    "postgresql-fqdn"       = var.key_vault_enabled && var.key_vault_config != null && var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 && length(azurerm_key_vault_secret.postgresql_fqdn) > 0 ? azurerm_key_vault_secret.postgresql_fqdn[0].id : null
+    "postgresql-admin-login" = var.key_vault_enabled && var.key_vault_config != null && var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 && length(azurerm_key_vault_secret.postgresql_admin_login) > 0 ? azurerm_key_vault_secret.postgresql_admin_login[0].id : null
   }
 }
 
@@ -79,18 +77,28 @@ output "postgresql_fqdn" {
 
 # AI Foundry Outputs
 output "foundry_id" {
-  description = "The ID of the AI Foundry"
-  value       = var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? module.foundry[0].cognitive_account_id : null
+  description = "The ID of the AI Foundry hub"
+  value       = var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? module.foundry[0].foundry_id : null
 }
 
 output "foundry_name" {
-  description = "The name of the AI Foundry"
-  value       = var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? module.foundry[0].cognitive_account_name : null
+  description = "The name of the AI Foundry hub"
+  value       = var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? module.foundry[0].foundry_name : null
 }
 
 output "foundry_endpoint" {
-  description = "The endpoint of the AI Foundry"
-  value       = var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? module.foundry[0].cognitive_account_endpoint : null
+  description = "The endpoint of the AI Foundry hub"
+  value       = var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? module.foundry[0].foundry_endpoint : null
+}
+
+output "foundry_project_id" {
+  description = "The ID of the AI Foundry project (if created)"
+  value       = var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? module.foundry[0].project_id : null
+}
+
+output "foundry_project_name" {
+  description = "The name of the AI Foundry project (if created)"
+  value       = var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? module.foundry[0].project_name : null
 }
 
 # OpenAI Outputs

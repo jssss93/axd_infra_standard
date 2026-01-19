@@ -38,7 +38,7 @@ module "keyvault" {
   enabled_for_deployment          = lookup(var.key_vault_config, "enabled_for_deployment", false)
   enabled_for_disk_encryption     = lookup(var.key_vault_config, "enabled_for_disk_encryption", false)
   enabled_for_template_deployment = lookup(var.key_vault_config, "enabled_for_template_deployment", false)
-  enable_rbac_authorization       = lookup(var.key_vault_config, "enable_rbac_authorization", true)
+  rbac_authorization_enabled       = lookup(var.key_vault_config, "rbac_authorization_enabled", true)
   public_network_access_enabled    = lookup(var.key_vault_config, "public_network_access_enabled", false)
   purge_protection_enabled         = lookup(var.key_vault_config, "purge_protection_enabled", false)
   soft_delete_retention_days      = lookup(var.key_vault_config, "soft_delete_retention_days", 90)
@@ -51,9 +51,10 @@ module "keyvault" {
 
 # Key Vault Secrets for PaaS Services
 # Note: Key Vault secrets creation requires public network access or private endpoint connection
+# Temporarily disabled to allow Private Endpoint creation first
 # PostgreSQL 접속 정보
 resource "azurerm_key_vault_secret" "postgresql_password" {
-  count = var.key_vault_enabled && var.key_vault_config != null && var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 ? 1 : 0
+  count = 0  # Temporarily disabled: var.key_vault_enabled && var.key_vault_config != null && var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 ? 1 : 0
 
   name         = "postgresql-password"
   value        = var.postgresql_config.administrator_password
@@ -70,7 +71,7 @@ resource "azurerm_key_vault_secret" "postgresql_password" {
 }
 
 resource "azurerm_key_vault_secret" "postgresql_fqdn" {
-  count = var.key_vault_enabled && var.key_vault_config != null && var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 ? 1 : 0
+  count = 0  # Temporarily disabled: var.key_vault_enabled && var.key_vault_config != null && var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 ? 1 : 0
 
   name         = "postgresql-fqdn"
   value        = module.postgres[0].fqdn
@@ -87,7 +88,7 @@ resource "azurerm_key_vault_secret" "postgresql_fqdn" {
 }
 
 resource "azurerm_key_vault_secret" "postgresql_admin_login" {
-  count = var.key_vault_enabled && var.key_vault_config != null && var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 ? 1 : 0
+  count = 0  # Temporarily disabled: var.key_vault_enabled && var.key_vault_config != null && var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 ? 1 : 0
 
   name         = "postgresql-admin-login"
   value        = var.postgresql_config.administrator_login
@@ -105,7 +106,7 @@ resource "azurerm_key_vault_secret" "postgresql_admin_login" {
 
 # Cosmos DB 접속 정보
 resource "azurerm_key_vault_secret" "cosmosdb_endpoint" {
-  count = var.key_vault_enabled && var.key_vault_config != null && var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? 1 : 0
+  count = 0  # Temporarily disabled: var.key_vault_enabled && var.key_vault_config != null && var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? 1 : 0
 
   name         = "cosmosdb-endpoint"
   value        = module.cosmos[0].endpoint
@@ -122,7 +123,7 @@ resource "azurerm_key_vault_secret" "cosmosdb_endpoint" {
 }
 
 resource "azurerm_key_vault_secret" "cosmosdb_primary_key" {
-  count = var.key_vault_enabled && var.key_vault_config != null && var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? 1 : 0
+  count = 0  # Temporarily disabled: var.key_vault_enabled && var.key_vault_config != null && var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? 1 : 0
 
   name         = "cosmosdb-primary-key"
   value        = module.cosmos[0].primary_key
@@ -139,7 +140,7 @@ resource "azurerm_key_vault_secret" "cosmosdb_primary_key" {
 }
 
 resource "azurerm_key_vault_secret" "cosmosdb_secondary_key" {
-  count = var.key_vault_enabled && var.key_vault_config != null && var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? 1 : 0
+  count = 0  # Temporarily disabled: var.key_vault_enabled && var.key_vault_config != null && var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? 1 : 0
 
   name         = "cosmosdb-secondary-key"
   value        = module.cosmos[0].secondary_key
@@ -157,7 +158,7 @@ resource "azurerm_key_vault_secret" "cosmosdb_secondary_key" {
 
 # ACR 접속 정보
 resource "azurerm_key_vault_secret" "acr_login_server" {
-  count = var.key_vault_enabled && var.key_vault_config != null && var.container_registry_enabled && var.container_registry_config != null && length(module.acr) > 0 ? 1 : 0
+  count = 0  # Temporarily disabled: var.key_vault_enabled && var.key_vault_config != null && var.container_registry_enabled && var.container_registry_config != null && length(module.acr) > 0 ? 1 : 0
 
   name         = "acr-login-server"
   value        = module.acr[0].login_server
@@ -183,6 +184,10 @@ resource "azurerm_key_vault_secret" "acr_admin_username" {
 
   tags = var.tags
 
+  lifecycle {
+    ignore_changes = all
+  }
+
   depends_on = [module.keyvault, module.acr]
 }
 
@@ -196,12 +201,16 @@ resource "azurerm_key_vault_secret" "acr_admin_password" {
 
   tags = var.tags
 
+  lifecycle {
+    ignore_changes = all
+  }
+
   depends_on = [module.keyvault, module.acr]
 }
 
 # OpenAI 접속 정보
 resource "azurerm_key_vault_secret" "openai_endpoint" {
-  count = var.key_vault_enabled && var.key_vault_config != null && var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? 1 : 0
+  count = 0  # Temporarily disabled: var.key_vault_enabled && var.key_vault_config != null && var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? 1 : 0
 
   name         = "openai-endpoint"
   value        = module.openai[0].endpoint
@@ -218,7 +227,7 @@ resource "azurerm_key_vault_secret" "openai_endpoint" {
 }
 
 resource "azurerm_key_vault_secret" "openai_primary_key" {
-  count = var.key_vault_enabled && var.key_vault_config != null && var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? 1 : 0
+  count = 0  # Temporarily disabled: var.key_vault_enabled && var.key_vault_config != null && var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? 1 : 0
 
   name         = "openai-primary-key"
   value        = module.openai[0].primary_access_key
@@ -235,7 +244,7 @@ resource "azurerm_key_vault_secret" "openai_primary_key" {
 }
 
 resource "azurerm_key_vault_secret" "openai_secondary_key" {
-  count = var.key_vault_enabled && var.key_vault_config != null && var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? 1 : 0
+  count = 0  # Temporarily disabled: var.key_vault_enabled && var.key_vault_config != null && var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? 1 : 0
 
   name         = "openai-secondary-key"
   value        = module.openai[0].secondary_access_key
@@ -253,10 +262,10 @@ resource "azurerm_key_vault_secret" "openai_secondary_key" {
 
 # AI Foundry 접속 정보
 resource "azurerm_key_vault_secret" "foundry_endpoint" {
-  count = var.key_vault_enabled && var.key_vault_config != null && var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? 1 : 0
+  count = 0  # Temporarily disabled: var.key_vault_enabled && var.key_vault_config != null && var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? 1 : 0
 
   name         = "foundry-endpoint"
-  value        = module.foundry[0].cognitive_account_endpoint
+  value        = module.foundry[0].foundry_endpoint
   content_type = "text/plain"
   key_vault_id = module.keyvault[0].id
 
@@ -269,39 +278,8 @@ resource "azurerm_key_vault_secret" "foundry_endpoint" {
   depends_on = [module.keyvault, module.foundry]
 }
 
-resource "azurerm_key_vault_secret" "foundry_primary_key" {
-  count = var.key_vault_enabled && var.key_vault_config != null && var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? 1 : 0
-
-  name         = "foundry-primary-key"
-  value        = module.foundry[0].primary_access_key
-  content_type = "text/plain"
-  key_vault_id = module.keyvault[0].id
-
-  tags = var.tags
-
-  lifecycle {
-    ignore_changes = all
-  }
-
-  depends_on = [module.keyvault, module.foundry]
-}
-
-resource "azurerm_key_vault_secret" "foundry_secondary_key" {
-  count = var.key_vault_enabled && var.key_vault_config != null && var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? 1 : 0
-
-  name         = "foundry-secondary-key"
-  value        = module.foundry[0].secondary_access_key
-  content_type = "text/plain"
-  key_vault_id = module.keyvault[0].id
-
-  tags = var.tags
-
-  lifecycle {
-    ignore_changes = all
-  }
-
-  depends_on = [module.keyvault, module.foundry]
-}
+# Note: Azure AI Foundry does not have access keys like Cognitive Services
+# Remove foundry-primary-key and foundry-secondary-key secrets as they are not applicable
 
 # Cosmos DB Module
 module "cosmos" {
@@ -363,6 +341,22 @@ module "postgres" {
   tags = var.tags
 }
 
+# Storage Account for Foundry (if not provided)
+resource "azurerm_storage_account" "foundry" {
+  count = var.foundry_enabled && var.foundry_config != null && lookup(var.foundry_config, "storage_account_id", null) == null ? 1 : 0
+
+  name                     = lookup(var.foundry_config, "storage_account_name", null) != null ? var.foundry_config.storage_account_name : "${replace(var.foundry_name, "-", "")}sa"
+  resource_group_name      = var.resource_group_name
+  location                 = var.location
+  account_tier             = lookup(var.foundry_config, "storage_account_tier", "Standard")
+  account_replication_type = lookup(var.foundry_config, "storage_account_replication_type", "LRS")
+  
+  # Public network access 설정 (기본값: false - AXD 정책 요구사항)
+  public_network_access_enabled = lookup(var.foundry_config, "storage_account_public_network_access_enabled", false)
+
+  tags = var.tags
+}
+
 # AI Foundry Module
 module "foundry" {
   count = var.foundry_enabled && var.foundry_config != null ? 1 : 0
@@ -372,15 +366,21 @@ module "foundry" {
   name                = var.foundry_name
   resource_group_name = var.resource_group_name
   location            = var.location
-  create_cognitive_account = lookup(var.foundry_config, "create_cognitive_account", true)
-  cognitive_account_kind  = lookup(var.foundry_config, "cognitive_account_kind", "OpenAI")
-  cognitive_account_sku   = lookup(var.foundry_config, "cognitive_account_sku", "S0")
+  storage_account_id         = lookup(var.foundry_config, "storage_account_id", null) != null ? var.foundry_config.storage_account_id : azurerm_storage_account.foundry[0].id
+  key_vault_id               = var.key_vault_enabled && var.key_vault_config != null && length(module.keyvault) > 0 ? module.keyvault[0].id : lookup(var.foundry_config, "key_vault_id", null)
   public_network_access_enabled = lookup(var.foundry_config, "public_network_access_enabled", false)
-  identity_type                 = lookup(var.foundry_config, "identity_type", "SystemAssigned")
-  identity_ids                  = lookup(var.foundry_config, "identity_ids", [])
-  foundry_services               = lookup(var.foundry_config, "foundry_services", null)
+  identity_type              = lookup(var.foundry_config, "identity_type", "SystemAssigned")
+  identity_ids               = lookup(var.foundry_config, "identity_ids", [])
+  create_project             = lookup(var.foundry_config, "create_project", false)
+  project_name               = lookup(var.foundry_config, "project_name", null)
+  project_identity_type      = lookup(var.foundry_config, "project_identity_type", null)
+  project_identity_ids       = lookup(var.foundry_config, "project_identity_ids", [])
+  openai_resource_id         = var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? module.openai[0].id : lookup(var.foundry_config, "openai_resource_id", null)
+  openai_connection_name     = lookup(var.foundry_config, "openai_connection_name", null)
 
   tags = var.tags
+
+  depends_on = [module.keyvault, module.openai]
 }
 
 # OpenAI Module

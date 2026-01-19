@@ -10,7 +10,7 @@ resource "azurerm_key_vault" "this" {
   enabled_for_disk_encryption     = var.enabled_for_disk_encryption
   enabled_for_template_deployment = var.enabled_for_template_deployment
 
-  enable_rbac_authorization = var.enable_rbac_authorization
+  rbac_authorization_enabled = var.rbac_authorization_enabled
 
   public_network_access_enabled = var.public_network_access_enabled
 
@@ -44,7 +44,7 @@ resource "azurerm_key_vault" "this" {
 
 # Access Policies (if RBAC is not enabled)
 resource "azurerm_key_vault_access_policy" "this" {
-  for_each = var.enable_rbac_authorization ? {} : var.access_policies
+  for_each = var.rbac_authorization_enabled ? {} : var.access_policies
 
   key_vault_id = azurerm_key_vault.this.id
   tenant_id    = var.tenant_id
