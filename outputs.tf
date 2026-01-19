@@ -10,22 +10,22 @@ output "resource_group_name" {
 
 output "vnet_id" {
   description = "The ID of the Virtual Network"
-  value       = module.networking_core.vnet_id
+  value       = module.vnet.id
 }
 
 output "vnet_name" {
   description = "The name of the Virtual Network"
-  value       = module.networking_core.vnet_name
+  value       = module.vnet.name
 }
 
 output "subnet_ids" {
   description = "Map of subnet keys to subnet IDs"
-  value       = module.networking_core.subnet_ids
+  value       = module.subnets.subnet_ids
 }
 
 output "subnet_names" {
   description = "Map of subnet keys to subnet names"
-  value       = module.networking_core.subnet_names
+  value       = module.subnets.subnet_names
 }
 
 output "container_app_environment_id" {
@@ -50,131 +50,153 @@ output "container_app_fqdns" {
 
 output "application_gateway_id" {
   description = "The ID of the Application Gateway"
-  value       = module.networking_core.application_gateway_id
+  value       = var.application_gateway_enabled && var.application_gateway_config != null && length(module.application_gateway) > 0 ? module.application_gateway[0].id : null
 }
 
 output "application_gateway_public_ip" {
   description = "The public IP address of the Application Gateway"
-  value       = module.networking_core.application_gateway_public_ip_address
+  value       = var.application_gateway_enabled && var.application_gateway_config != null && length(module.application_gateway) > 0 ? module.application_gateway[0].public_ip_address : null
 }
 
 output "application_gateway_public_ip_address" {
   description = "The public IP address of the Application Gateway"
-  value       = module.networking_core.application_gateway_public_ip_address
+  value       = var.application_gateway_enabled && var.application_gateway_config != null && length(module.application_gateway) > 0 ? module.application_gateway[0].public_ip_address : null
 }
 
 # Container Registry Outputs
 output "container_registry_id" {
   description = "The ID of the Container Registry"
-  value       = module.infra.container_registry_id
+  value       = var.container_registry_enabled && var.container_registry_config != null && length(module.acr) > 0 ? module.acr[0].id : null
 }
 
 output "container_registry_name" {
   description = "The name of the Container Registry"
-  value       = module.infra.container_registry_name
+  value       = var.container_registry_enabled && var.container_registry_config != null && length(module.acr) > 0 ? module.acr[0].name : null
 }
 
 output "container_registry_login_server" {
   description = "The login server URL of the Container Registry"
-  value       = module.infra.container_registry_id != null ? "${module.infra.container_registry_name}.azurecr.io" : null
+  value       = var.container_registry_enabled && var.container_registry_config != null && length(module.acr) > 0 ? module.acr[0].login_server : null
 }
 
 # Key Vault Outputs
 output "key_vault_id" {
   description = "The ID of the Key Vault"
-  value       = module.infra.key_vault_id
+  value       = var.key_vault_enabled && var.key_vault_config != null && length(module.keyvault) > 0 ? module.keyvault[0].id : null
 }
 
 output "key_vault_name" {
   description = "The name of the Key Vault"
-  value       = module.infra.key_vault_name
+  value       = var.key_vault_enabled && var.key_vault_config != null && length(module.keyvault) > 0 ? module.keyvault[0].name : null
 }
 
 output "key_vault_uri" {
   description = "The URI of the Key Vault"
-  value       = module.infra.key_vault_uri
+  value       = var.key_vault_enabled && var.key_vault_config != null && length(module.keyvault) > 0 ? module.keyvault[0].vault_uri : null
+}
+
+# Key Vault Secret IDs (aggregated from service modules)
+output "key_vault_secret_ids" {
+  description = "Map of Key Vault secret names to their resource IDs (aggregated from all service modules)"
+  value = merge(
+    var.container_registry_enabled && var.container_registry_config != null && length(module.acr) > 0 ? module.acr[0].key_vault_secret_ids : {},
+    var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? module.cosmos[0].key_vault_secret_ids : {},
+    var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 ? module.postgres[0].key_vault_secret_ids : {},
+    var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? module.openai[0].key_vault_secret_ids : {},
+    var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? module.foundry[0].key_vault_secret_ids : {}
+  )
 }
 
 # Cosmos DB Outputs
 output "cosmos_db_id" {
   description = "The ID of the Cosmos DB Account"
-  value       = module.infra.cosmos_db_id
+  value       = var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? module.cosmos[0].id : null
 }
 
 output "cosmos_db_name" {
   description = "The name of the Cosmos DB Account"
-  value       = module.infra.cosmos_db_name
+  value       = var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? module.cosmos[0].name : null
 }
 
 output "cosmos_db_endpoint" {
   description = "The endpoint of the Cosmos DB Account"
-  value       = module.infra.cosmos_db_endpoint
+  value       = var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? module.cosmos[0].endpoint : null
 }
 
 output "cosmos_db_database_ids" {
   description = "Map of Cosmos DB SQL Database IDs"
-  value       = null  # module.infra에 database_ids output이 없음
+  value       = var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? module.cosmos[0].database_ids : {}
 }
 
 output "cosmos_db_container_ids" {
   description = "Map of Cosmos DB SQL Container IDs"
-  value       = null  # module.infra에 container_ids output이 없음
+  value       = var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? module.cosmos[0].container_ids : {}
 }
 
 # PostgreSQL Outputs
 output "postgresql_id" {
   description = "The ID of the PostgreSQL Flexible Server"
-  value       = module.infra.postgresql_id
+  value       = var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 ? module.postgres[0].id : null
 }
 
 output "postgresql_name" {
   description = "The name of the PostgreSQL Flexible Server"
-  value       = module.infra.postgresql_name
+  value       = var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 ? module.postgres[0].name : null
 }
 
 output "postgresql_fqdn" {
   description = "The FQDN of the PostgreSQL Flexible Server"
-  value       = module.infra.postgresql_fqdn
+  value       = var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 ? module.postgres[0].fqdn : null
 }
 
 output "postgresql_database_ids" {
   description = "Map of PostgreSQL Database IDs"
-  value       = null  # module.infra에 database_ids output이 없음
+  value       = var.postgresql_enabled && var.postgresql_config != null && length(module.postgres) > 0 ? module.postgres[0].database_ids : {}
 }
 
 # AI Foundry Outputs
 output "foundry_cognitive_account_id" {
   description = "The ID of the Foundry Cognitive Services Account"
-  value       = module.infra.foundry_id
+  value       = var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? module.foundry[0].foundry_id : null
 }
 
 output "foundry_cognitive_account_name" {
   description = "The name of the Foundry Cognitive Services Account"
-  value       = module.infra.foundry_name
+  value       = var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? module.foundry[0].foundry_name : null
 }
 
 output "foundry_cognitive_account_endpoint" {
   description = "The endpoint of the Foundry Cognitive Services Account"
-  value       = null  # module.infra에 endpoint output이 없음
+  value       = var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? module.foundry[0].foundry_endpoint : null
+}
+
+output "foundry_project_id" {
+  description = "The ID of the AI Foundry project (if created)"
+  value       = var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? module.foundry[0].project_id : null
+}
+
+output "foundry_project_name" {
+  description = "The name of the AI Foundry project (if created)"
+  value       = var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? module.foundry[0].project_name : null
 }
 
 # OpenAI Outputs
 output "openai_id" {
   description = "The ID of the Azure OpenAI Account"
-  value       = module.infra.openai_id
+  value       = var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? module.openai[0].id : null
 }
 
 output "openai_name" {
   description = "The name of the Azure OpenAI Account"
-  value       = module.infra.openai_name
+  value       = var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? module.openai[0].name : null
 }
 
 output "openai_endpoint" {
   description = "The endpoint of the Azure OpenAI Account"
-  value       = null  # module.infra에 endpoint output이 없음
+  value       = var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? module.openai[0].endpoint : null
 }
 
 output "openai_deployment_ids" {
   description = "Map of Azure OpenAI Deployment IDs"
-  value       = null  # module.infra에 deployment_ids output이 없음
+  value       = var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? module.openai[0].deployment_ids : {}
 }

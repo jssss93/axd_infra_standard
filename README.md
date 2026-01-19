@@ -10,7 +10,9 @@
 │   ├── foundation/            # 기본 인프라
 │   │   └── rg/               # Resource Group 모듈
 │   ├── networking/            # 네트워크 관련
-│   │   ├── core/             # VNet + Subnets + Application Gateway (통합)
+│   │   ├── vnet/             # Virtual Network 모듈
+│   │   ├── subnet/           # Subnet 모듈
+│   │   ├── application-gateway/  # Application Gateway 모듈
 │   │   └── pe/               # Private Endpoints + Private DNS Zones 통합
 │   ├── compute/              # 컴퓨팅 리소스
 │   │   └── container-apps/   # Container Apps, VM, Log Analytics
@@ -20,7 +22,6 @@
 │   │   ├── cosmos/           # Cosmos DB
 │   │   └── postgres/         # PostgreSQL
 │   └── services/             # AI 서비스들
-│       ├── infra/            # 통합 모듈 (모든 서비스 통합 관리)
 │       ├── foundry/          # AI Foundry
 │       └── openai/           # OpenAI
 ├── env/                       # 환경별 배포 설정
@@ -190,37 +191,42 @@ Terraform은 리소스 간 의존성을 자동으로 감지하여 올바른 순�
 - **생성 시간**: ~5초
 - **생성 리소스**: Resource Group
 
-#### 2단계: Networking Core 생성
-- **모듈**: `module.networking_core`
+#### 2단계: Virtual Network 생성
+- **모듈**: `module.vnet`
 - **의존성**: `module.rg` (Resource Group)
-- **생성 시간**: ~30초
+- **생성 시간**: ~10초
 - **생성 리소스**:
   - Virtual Network
+
+#### 3단계: Subnets 생성
+- **모듈**: `module.subnets`
+- **의존성**: `module.vnet` (Virtual Network)
+- **생성 시간**: ~20초
+- **생성 리소스**:
   - Subnets (agw, cae, vm, pe 등)
-  - Application Gateway (선택사항, 하지만 이 단계에서는 생성되지 않고 5단계에서 생성됨)
+  - Network Security Group Associations
+  - Route Table Associations
 
-**참고**: Application Gateway는 실제로는 Container Apps FQDN이 필요하므로 5단계에서 생성됩니다.
-
-#### 3단계: Infrastructure Services 생성 (병렬 가능)
-- **모듈**: `module.infra`
+#### 4단계: Infrastructure Services 생성 (병렬 가능)
+- **모듈**: `module.keyvault`, `module.acr`, `module.cosmos`, `module.postgres`, `module.foundry`, `module.openai`
 - **의존성**: `module.rg` (Resource Group)
 - **생성 시간**: 서비스별로 다름 (각 2-10분)
 - **생성 리소스** (활성화된 경우):
+  - Key Vault (다른 서비스보다 먼저 생성)
   - Container Registry (ACR)
-  - Key Vault
   - Cosmos DB
   - PostgreSQL
   - AI Foundry
   - OpenAI
 
-이 단계는 Networking Core와 병렬로 배포될 수 있습니다.
+이 단계는 Networking과 병렬로 배포될 수 있습니다.
 
-#### 4단계: Compute 리소스 생성
+#### 5단계: Compute 리소스 생성
 - **모듈**: `module.compute`
 - **의존성**: 
   - `module.rg` (Resource Group)
-  - `module.networking_core` (Subnet ID)
-  - `module.infra` (Key Vault ID - 명시적 `depends_on`)
+  - `module.subnets` (Subnet ID)
+  - `module.keyvault` (Key Vault ID - 명시적 `depends_on`)
 - **생성 시간**: ~5-10분
 - **생성 리소스**:
   - Log Analytics Workspace (없는 경우)
@@ -228,9 +234,10 @@ Terraform은 리소스 간 의존성을 자동으로 감지하여 올바른 순�
   - Container Apps (FQDN 자동 생성)
   - Virtual Machines (선택사항)
 
-#### 5단계: Application Gateway 생성
-- **모듈**: `module.networking_core` (내부)
+#### 6단계: Application Gateway 생성
+- **모듈**: `module.application_gateway`
 - **의존성**: 
+  - `module.subnets` (Subnet ID)
   - `module.compute` (Container Apps FQDN)
 - **생성 시간**: ~10-15분
 - **생성 리소스**:
@@ -240,12 +247,13 @@ Terraform은 리소스 간 의존성을 자동으로 감지하여 올바른 순�
 
 **참고**: Application Gateway는 Container Apps의 FQDN이 생성된 후에 배포됩니다.
 
-#### 6단계: Private Endpoints 생성 (선택사항)
+#### 7단계: Private Endpoints 생성 (선택사항)
 - **모듈**: `module.networking_pe`
 - **의존성**: 
   - `module.rg` (Resource Group)
-  - `module.networking_core` (VNet ID, Subnet ID)
-  - `module.infra` (PaaS 서비스 리소스 ID - 명시적 `depends_on`)
+  - `module.vnet` (VNet ID)
+  - `module.subnets` (Subnet ID)
+  - 각 PaaS 서비스 모듈 (리소스 ID - 명시적 `depends_on`)
 - **생성 시간**: ~5-10분
 - **생성 리소스** (활성화된 경우):
   - Private DNS Zones
@@ -256,11 +264,12 @@ Terraform은 리소스 간 의존성을 자동으로 감지하여 올바른 순�
 | 단계 | 리소스 | 예상 시간 |
 |------|--------|----------|
 | 1단계 | Resource Group | ~5초 |
-| 2단계 | Networking Core (VNet + Subnets) | ~30초 |
-| 3단계 | Infrastructure Services (PaaS) | ~2-10분 (서비스별) |
-| 4단계 | Container Apps Environment + Apps | ~5-10분 |
-| 5단계 | Application Gateway | ~10-15분 |
-| 6단계 | Private Endpoints (선택사항) | ~5-10분 |
+| 2단계 | Virtual Network | ~10초 |
+| 3단계 | Subnets | ~20초 |
+| 4단계 | Infrastructure Services (PaaS) | ~2-10분 (서비스별) |
+| 5단계 | Container Apps Environment + Apps | ~5-10분 |
+| 6단계 | Application Gateway | ~10-15분 |
+| 7단계 | Private Endpoints (선택사항) | ~5-10분 |
 | **전체** | **모든 리소스** | **~20-35분** |
 
 ### 배포 순서 확인 방법
@@ -281,19 +290,22 @@ terraform graph
 # 1단계: Resource Group만 생성
 terraform apply -target=module.rg
 
-# 2단계: Network만 생성
-terraform apply -target=module.networking_core
+# 2단계: Virtual Network만 생성
+terraform apply -target=module.vnet
 
-# 3단계: Infrastructure Services만 생성
-terraform apply -target=module.infra
+# 3단계: Subnets만 생성
+terraform apply -target=module.subnets
 
-# 4단계: Compute만 생성
+# 4단계: Infrastructure Services만 생성
+terraform apply -target=module.keyvault -target=module.acr -target=module.cosmos -target=module.postgres -target=module.foundry -target=module.openai
+
+# 5단계: Compute만 생성
 terraform apply -target=module.compute
 
-# 5단계: Application Gateway만 생성 (networking_core 모듈 내부)
-terraform apply -target=module.networking_core
+# 6단계: Application Gateway만 생성
+terraform apply -target=module.application_gateway[0]
 
-# 6단계: Private Endpoints만 생성
+# 7단계: Private Endpoints만 생성
 terraform apply -target=module.networking_pe[0]
 
 # 전체 배포
@@ -303,9 +315,10 @@ terraform apply
 ### 주의사항
 
 1. **Container Apps FQDN 대기**: Application Gateway는 Container Apps의 FQDN이 생성된 후에 배포됩니다.
-2. **Key Vault 의존성**: Container Apps 모듈은 Key Vault가 생성된 후에 배포됩니다 (`depends_on = [module.infra]`).
-3. **Private Endpoints 의존성**: Private Endpoints는 PaaS 서비스들이 생성된 후에 배포됩니다 (`depends_on = [module.infra]`).
+2. **Key Vault 의존성**: Container Apps 모듈은 Key Vault가 생성된 후에 배포됩니다 (`depends_on = [module.keyvault]`).
+3. **Private Endpoints 의존성**: Private Endpoints는 PaaS 서비스들이 생성된 후에 배포됩니다 (`depends_on = [module.keyvault, module.acr, module.cosmos, module.postgres, module.foundry, module.openai]`).
 4. **Application Gateway 배포 시간**: Application Gateway는 가장 오래 걸리는 리소스입니다 (10-15분).
+5. **모듈 구조**: 모든 리소스는 루트 `main.tf`에서 개별 모듈로 직접 호출됩니다.
 
 ## 모듈 설명
 
@@ -327,9 +340,9 @@ Azure Resource Group을 생성합니다.
 
 ### Networking 모듈
 
-#### Core 모듈 (`modules/networking/core/`)
+#### VNet 모듈 (`modules/networking/vnet/`)
 
-Azure Virtual Network, Subnet, 그리고 Application Gateway를 통합하여 관리하는 모듈입니다.
+Azure Virtual Network를 관리하는 모듈입니다.
 
 **입력 변수:**
 - `name`: 가상 네트워크 이름
@@ -337,16 +350,25 @@ Azure Virtual Network, Subnet, 그리고 Application Gateway를 통합하여 관
 - `location`: Azure 지역
 - `address_space`: 주소 공간 (CIDR 리스트)
 - `dns_servers`: DNS 서버 IP 주소 리스트 (선택)
+- `tags`: 태그 맵
+
+**출력:**
+- `id`: 가상 네트워크 ID
+- `name`: 가상 네트워크 이름
+- `address_space`: 주소 공간
+
+#### Subnet 모듈 (`modules/networking/subnet/`)
+
+Azure Subnet을 관리하는 모듈입니다. 여러 Subnet을 map으로 관리합니다.
+
+**입력 변수:**
+- `resource_group_name`: 리소스 그룹 이름
+- `virtual_network_name`: 가상 네트워크 이름
 - `subnets`: 서브넷 설정 맵
-- `application_gateway_enabled`: Application Gateway 생성 여부
-- `application_gateway_name`: Application Gateway 이름
-- `application_gateway_subnet_id`: Application Gateway용 서브넷 키
-- `application_gateway_config`: Application Gateway 설정
-- `container_app_fqdns`: Container Apps FQDN 맵 (자동 연결용)
 - `tags`: 태그 맵
 
 **서브넷 설정 옵션:**
-- `name`: 서브넷 이름 (선택, 지정하지 않으면 네이밍 규칙 자동 적용)
+- `name`: 서브넷 이름 (선택, 지정하지 않으면 자동 생성)
 - `address_prefixes`: 주소 접두사 리스트
 - `network_security_group_id`: NSG ID (선택)
 - `route_table_id`: 라우트 테이블 ID (선택)
@@ -355,15 +377,34 @@ Azure Virtual Network, Subnet, 그리고 Application Gateway를 통합하여 관
 - `delegation`: 서브넷 위임 설정 (선택)
 
 **출력:**
-- `vnet_id`: 가상 네트워크 ID
-- `vnet_name`: 가상 네트워크 이름
-- `vnet_address_space`: 주소 공간
-- `subnet_ids`: 서브넷 키와 ID 맵
-- `subnet_names`: 서브넷 키와 이름 맵
+- `subnet_ids`: 서브넷 키에서 서브넷 ID로의 맵
+- `subnet_names`: 서브넷 키에서 서브넷 이름으로의 맵
 - `subnets`: 서브넷 객체 맵
-- `application_gateway_id`: Application Gateway ID
-- `application_gateway_public_ip_address`: Application Gateway Public IP 주소
 
+#### Application Gateway 모듈 (`modules/networking/application-gateway/`)
+
+Azure Application Gateway를 관리하는 모듈입니다.
+
+**입력 변수:**
+- `name`: Application Gateway 이름
+- `resource_group_name`: 리소스 그룹 이름
+- `location`: Azure 지역
+- `subnet_id`: Application Gateway용 서브넷 ID
+- `sku_name`, `sku_tier`, `capacity`: SKU 설정
+- `public_ip_enabled`: Public IP 생성 여부
+- `frontend_ports`: 프론트엔드 포트 리스트
+- `backend_address_pools`: 백엔드 주소 풀 리스트
+- `backend_http_settings`: 백엔드 HTTP 설정 리스트
+- `http_listeners`: HTTP 리스너 리스트
+- `request_routing_rules`: 요청 라우팅 규칙 리스트
+- `container_app_fqdns`: Container Apps FQDN 맵 (자동 연결용)
+- `tags`: 태그 맵
+
+**출력:**
+- `id`: Application Gateway ID
+- `name`: Application Gateway 이름
+- `public_ip_address`: Public IP 주소
+- `public_ip_id`: Public IP ID
 #### Private Endpoint 모듈 (`modules/networking/pe/`)
 
 Private Endpoints와 Private DNS Zones를 통합하여 관리하는 모듈입니다.
@@ -447,23 +488,7 @@ Azure Container Apps, Virtual Machines, 그리고 Log Analytics Workspace를 관
 
 ### Services 모듈
 
-#### 통합 모듈 (`modules/services/infra/`)
-
-모든 PaaS 서비스를 통합하여 관리하는 모듈입니다. 데이터 저장소 서비스와 AI 서비스 모듈들을 내부적으로 호출합니다.
-
-**지원 서비스:**
-- **데이터 저장소**: Container Registry (ACR), Key Vault, Cosmos DB, PostgreSQL
-- **AI 서비스**: AI Foundry, OpenAI
-
-**입력 변수:**
-각 서비스별로 `{service}_enabled`, `{service}_name`, `{service}_config` 형태의 변수를 제공합니다.
-
-**출력:**
-각 서비스별로 ID, 이름, 엔드포인트 등의 출력을 제공합니다.
-
-#### 개별 서비스 모듈
-
-각 서비스는 독립적으로도 사용할 수 있습니다:
+AI 서비스 모듈들입니다. 각 서비스는 독립적으로 사용할 수 있습니다:
 
 **데이터 저장소 서비스:**
 - `modules/data/acr/`: Container Registry

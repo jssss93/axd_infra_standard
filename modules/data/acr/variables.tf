@@ -97,6 +97,12 @@ variable "identity_ids" {
   default     = []
 }
 
+variable "key_vault_id" {
+  description = "The ID of the Key Vault to store secrets (optional)"
+  type        = string
+  default     = null
+}
+
 variable "tags" {
   description = "A map of tags to assign to the resource"
   type        = map(string)

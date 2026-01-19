@@ -14,13 +14,39 @@ variable "location" {
 }
 
 variable "storage_account_id" {
-  description = "The ID of the Storage Account to use for the Foundry hub"
+  description = "The ID of the Storage Account to use for the Foundry hub (optional, if not provided, one will be created)"
   type        = string
+  default     = null
+}
+
+variable "storage_account_name" {
+  description = "The name of the Storage Account to create (if storage_account_id is not provided)"
+  type        = string
+  default     = null
+}
+
+variable "storage_account_tier" {
+  description = "The tier of the Storage Account"
+  type        = string
+  default     = "Standard"
+}
+
+variable "storage_account_replication_type" {
+  description = "The replication type of the Storage Account"
+  type        = string
+  default     = "LRS"
+}
+
+variable "storage_account_public_network_access_enabled" {
+  description = "Whether public network access is enabled for the Storage Account"
+  type        = bool
+  default     = false
 }
 
 variable "key_vault_id" {
-  description = "The ID of the Key Vault to use for the Foundry hub"
+  description = "The ID of the Key Vault to use for the Foundry hub (optional, but recommended)"
   type        = string
+  default     = null
 }
 
 variable "public_network_access_enabled" {

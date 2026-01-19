@@ -1,9 +1,35 @@
+# Data source for existing Storage Account (if name is provided but ID is not)
+data "azurerm_storage_account" "foundry" {
+  count = var.storage_account_id == null && var.storage_account_name != null ? 1 : 0
+
+  name                = var.storage_account_name
+  resource_group_name = var.resource_group_name
+}
+
+# Storage Account for Foundry (if not provided and not found via data source)
+resource "azurerm_storage_account" "foundry" {
+  count = var.storage_account_id == null && (var.storage_account_name == null || length(data.azurerm_storage_account.foundry) == 0) ? 1 : 0
+
+  name                     = var.storage_account_name != null ? var.storage_account_name : "${replace(var.name, "-", "")}sa"
+  resource_group_name      = var.resource_group_name
+  location                 = var.location
+  account_tier             = var.storage_account_tier
+  account_replication_type = var.storage_account_replication_type
+  
+  # Public network access 설정 (기본값: false - AXD 정책 요구사항)
+  public_network_access_enabled = var.storage_account_public_network_access_enabled
+
+  tags = var.tags
+}
+
 # Azure AI Foundry Hub
 resource "azurerm_ai_foundry" "foundry" {
   name                = var.name
   location            = var.location
   resource_group_name = var.resource_group_name
-  storage_account_id  = var.storage_account_id
+  storage_account_id  = var.storage_account_id != null ? var.storage_account_id : (
+    length(data.azurerm_storage_account.foundry) > 0 ? data.azurerm_storage_account.foundry[0].id : azurerm_storage_account.foundry[0].id
+  )
   key_vault_id        = var.key_vault_id
   public_network_access = var.public_network_access_enabled ? "Enabled" : "Disabled"
 

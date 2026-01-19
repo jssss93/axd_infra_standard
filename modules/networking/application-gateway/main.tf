@@ -1,96 +1,35 @@
-# Virtual Network
-resource "azurerm_virtual_network" "this" {
-  name                = var.name
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  address_space       = var.address_space
-
-  dns_servers = var.dns_servers
-
-  tags = var.tags
-}
-
-# Subnets
-resource "azurerm_subnet" "this" {
-  for_each = var.subnets
-
-  name                 = lookup(each.value, "name", null) != null ? each.value.name : "${each.key}-sbn"
-  resource_group_name  = var.resource_group_name
-  virtual_network_name = azurerm_virtual_network.this.name
-  address_prefixes     = each.value.address_prefixes
-
-  # Optional configurations
-  service_endpoints           = lookup(each.value, "service_endpoints", null)
-  service_endpoint_policy_ids = lookup(each.value, "service_endpoint_policy_ids", null)
-
-  # Delegation block
-  dynamic "delegation" {
-    for_each = lookup(each.value, "delegation", null) != null ? [each.value.delegation] : []
-    content {
-      name = delegation.value.name
-      service_delegation {
-        name    = delegation.value.service_delegation.name
-        actions = lookup(delegation.value.service_delegation, "actions", null)
-      }
-    }
-  }
-}
-
-# Network Security Group Association
-resource "azurerm_subnet_network_security_group_association" "this" {
-  for_each = {
-    for k, v in var.subnets : k => v
-    if lookup(v, "network_security_group_id", null) != null
-  }
-
-  subnet_id                 = azurerm_subnet.this[each.key].id
-  network_security_group_id = each.value.network_security_group_id
-}
-
-# Route Table Association
-resource "azurerm_subnet_route_table_association" "this" {
-  for_each = {
-    for k, v in var.subnets : k => v
-    if lookup(v, "route_table_id", null) != null
-  }
-
-  subnet_id      = azurerm_subnet.this[each.key].id
-  route_table_id = each.value.route_table_id
-}
-
-# Application Gateway (optional)
+# Application Gateway Public IP (optional)
 resource "azurerm_public_ip" "agw" {
-  count = var.application_gateway_enabled && var.application_gateway_config != null && lookup(var.application_gateway_config, "public_ip_enabled", true) ? 1 : 0
+  count = var.public_ip_enabled ? 1 : 0
 
-  name                = lookup(var.application_gateway_config, "public_ip_name", null) != null ? var.application_gateway_config.public_ip_name : "${var.application_gateway_name}-pip"
+  name                = var.public_ip_name != null ? var.public_ip_name : "${var.name}-pip"
   resource_group_name = var.resource_group_name
   location            = var.location
-  allocation_method   = lookup(var.application_gateway_config, "public_ip_allocation_method", "Static")
-  sku                 = lookup(var.application_gateway_config, "public_ip_sku", "Standard")
+  allocation_method   = var.public_ip_allocation_method
+  sku                 = var.public_ip_sku
 
   tags = var.tags
 }
 
+# Application Gateway
 resource "azurerm_application_gateway" "this" {
-  count = var.application_gateway_enabled && var.application_gateway_config != null ? 1 : 0
-
-  name                = var.application_gateway_name
+  name                = var.name
   resource_group_name = var.resource_group_name
   location            = var.location
 
   sku {
-    name     = var.application_gateway_config.sku_name
-    tier     = var.application_gateway_config.sku_tier
-    capacity = var.application_gateway_config.capacity
+    name     = var.sku_name
+    tier     = var.sku_tier
+    capacity = var.capacity
   }
 
   gateway_ip_configuration {
-    name      = "${var.application_gateway_name}-ip-config"
-    subnet_id = var.application_gateway_subnet_id != null ? azurerm_subnet.this[var.application_gateway_subnet_id].id : null
+    name      = "${var.name}-ip-config"
+    subnet_id = var.subnet_id
   }
 
   dynamic "frontend_port" {
-    for_each = var.application_gateway_config.frontend_ports
+    for_each = var.frontend_ports
     content {
       name = frontend_port.value.name
       port = frontend_port.value.port
@@ -98,37 +37,36 @@ resource "azurerm_application_gateway" "this" {
   }
 
   dynamic "frontend_ip_configuration" {
-    for_each = lookup(var.application_gateway_config, "public_ip_enabled", true) && length(azurerm_public_ip.agw) > 0 ? [1] : []
+    for_each = var.public_ip_enabled && length(azurerm_public_ip.agw) > 0 ? [1] : []
     content {
-      name                 = "${var.application_gateway_name}-feip-public"
+      name                 = "${var.name}-feip-public"
       public_ip_address_id = azurerm_public_ip.agw[0].id
     }
   }
 
   dynamic "frontend_ip_configuration" {
-    for_each = lookup(var.application_gateway_config, "private_ip_address", null) != null ? [1] : []
+    for_each = var.private_ip_address != null ? [1] : []
     content {
-      name                          = "${var.application_gateway_name}-feip-private"
-      subnet_id                     = var.application_gateway_subnet_id != null ? azurerm_subnet.this[var.application_gateway_subnet_id].id : null
-      private_ip_address            = var.application_gateway_config.private_ip_address
-      private_ip_address_allocation = lookup(var.application_gateway_config, "private_ip_address_allocation", "Static")
+      name                          = "${var.name}-feip-private"
+      subnet_id                     = var.subnet_id
+      private_ip_address            = var.private_ip_address
+      private_ip_address_allocation = var.private_ip_address_allocation
     }
   }
 
   dynamic "backend_address_pool" {
-    for_each = var.application_gateway_config.backend_address_pools
+    for_each = var.backend_address_pools
     content {
       name         = backend_address_pool.value.name
       fqdns        = length(lookup(backend_address_pool.value, "fqdns", [])) > 0 ? backend_address_pool.value.fqdns : (
-        # Container Apps FQDN이 자동으로 추가됨 (auto_connect_container_apps가 true인 경우)
-        lookup(var.application_gateway_config, "auto_connect_container_apps", true) && length(var.container_app_fqdns) > 0 ? values(var.container_app_fqdns) : lookup(backend_address_pool.value, "fqdns", [])
+        var.auto_connect_container_apps && length(var.container_app_fqdns) > 0 ? values(var.container_app_fqdns) : lookup(backend_address_pool.value, "fqdns", [])
       )
       ip_addresses = lookup(backend_address_pool.value, "ip_addresses", null)
     }
   }
 
   dynamic "backend_http_settings" {
-    for_each = var.application_gateway_config.backend_http_settings
+    for_each = var.backend_http_settings
     content {
       name                                = backend_http_settings.value.name
       cookie_based_affinity               = lookup(backend_http_settings.value, "cookie_based_affinity", "Disabled")
@@ -143,7 +81,7 @@ resource "azurerm_application_gateway" "this" {
   }
 
   dynamic "http_listener" {
-    for_each = var.application_gateway_config.http_listeners
+    for_each = var.http_listeners
     content {
       name                           = http_listener.value.name
       frontend_ip_configuration_name = http_listener.value.frontend_ip_configuration_name
@@ -155,7 +93,7 @@ resource "azurerm_application_gateway" "this" {
   }
 
   dynamic "request_routing_rule" {
-    for_each = var.application_gateway_config.request_routing_rules
+    for_each = var.request_routing_rules
     content {
       name                        = request_routing_rule.value.name
       rule_type                   = request_routing_rule.value.rule_type
@@ -170,7 +108,7 @@ resource "azurerm_application_gateway" "this" {
   }
 
   dynamic "ssl_certificate" {
-    for_each = lookup(var.application_gateway_config, "ssl_certificates", [])
+    for_each = var.ssl_certificates
     content {
       name                = ssl_certificate.value.name
       data                = lookup(ssl_certificate.value, "data", null)
@@ -180,7 +118,7 @@ resource "azurerm_application_gateway" "this" {
   }
 
   dynamic "probe" {
-    for_each = lookup(var.application_gateway_config, "probes", [])
+    for_each = var.probes
     content {
       name                                      = probe.value.name
       protocol                                  = probe.value.protocol
