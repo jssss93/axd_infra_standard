@@ -65,16 +65,25 @@ variable "project_identity_ids" {
   default     = []
 }
 
-variable "openai_resource_id" {
-  description = "The resource ID of the Azure OpenAI resource to connect to the Foundry project"
-  type        = string
-  default     = null
-}
-
-variable "openai_connection_name" {
-  description = "The name of the OpenAI connection in the Foundry project"
-  type        = string
-  default     = null
+variable "deployments" {
+  description = "Map of OpenAI deployments to create within the Foundry project"
+  type = map(object({
+    name                 = string
+    model_name           = string
+    model_format         = optional(string, "OpenAI")
+    model_version        = optional(string)
+    rai_policy_name      = optional(string)
+    version_upgrade_option = optional(string, "AutoUpgrade")
+    scale = object({
+      name     = optional(string)
+      type     = optional(string, "Standard")
+      capacity = optional(number)
+      family   = optional(string)
+      size     = optional(string)
+      tier     = optional(string)
+    })
+  }))
+  default = {}
 }
 
 variable "tags" {

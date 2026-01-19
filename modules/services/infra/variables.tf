@@ -184,9 +184,23 @@ variable "foundry_config" {
     project_identity_type          = optional(string, null)
     project_identity_ids           = optional(list(string), [])
     
-    # Foundry Project OpenAI Connection 설정
-    openai_resource_id             = optional(string, null)
-    openai_connection_name         = optional(string, null)
+    # Foundry Project OpenAI Deployments 설정
+    deployments = optional(map(object({
+      name                 = string
+      model_name           = string
+      model_format         = optional(string, "OpenAI")
+      model_version        = optional(string)
+      rai_policy_name      = optional(string)
+      version_upgrade_option = optional(string, "AutoUpgrade")
+      scale = object({
+        name     = optional(string)
+        type     = optional(string, "Standard")
+        capacity = optional(number)
+        family   = optional(string)
+        size     = optional(string)
+        tier     = optional(string)
+      })
+    })), {})
     
     # Legacy fields (deprecated, kept for backward compatibility)
     create_cognitive_account      = optional(bool, true)

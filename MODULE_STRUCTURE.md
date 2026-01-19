@@ -12,8 +12,7 @@ modules/
 │   ├── gateway/        # Application Gateway (독립 모듈)
 │   ├── pe/             # Private Endpoints + Private DNS Zones 통합
 │   ├── private-dns-zone/  # Private DNS Zone (개별 모듈)
-│   ├── private-endpoint/  # Private Endpoint (개별 모듈)
-│   └── legacy-network/    # 레거시 네트워크 모듈 (deprecated)
+│   └── private-endpoint/  # Private Endpoint (개별 모듈)
 │
 ├── compute/            # 컴퓨팅 리소스
 │   └── container-apps/  # Container Apps, VM, Log Analytics
@@ -52,6 +51,3 @@ modules/
 3. **유지보수성**: 관련 모듈들이 그룹화되어 관리 용이
 4. **가독성**: 프로젝트 구조를 한눈에 파악 가능
 
-## Deprecated 모듈
-
-- `modules/networking/legacy-network/` - `modules/networking/core/`로 대체됨 (레거시 호환성을 위해 보관)

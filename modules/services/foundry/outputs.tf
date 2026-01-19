@@ -22,3 +22,13 @@ output "project_name" {
   description = "The name of the Azure AI Foundry project (if created)"
   value       = var.create_project ? azurerm_ai_foundry_project.project[0].name : null
 }
+
+output "deployment_ids" {
+  description = "Map of deployment names to their resource IDs"
+  value       = length(var.deployments) > 0 ? { for k, v in azurerm_cognitive_deployment.foundry_deployments : k => v.id } : {}
+}
+
+output "deployment_names" {
+  description = "Map of deployment names"
+  value       = length(var.deployments) > 0 ? { for k, v in azurerm_cognitive_deployment.foundry_deployments : k => v.name } : {}
+}

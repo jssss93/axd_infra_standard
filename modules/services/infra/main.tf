@@ -375,12 +375,11 @@ module "foundry" {
   project_name               = lookup(var.foundry_config, "project_name", null)
   project_identity_type      = lookup(var.foundry_config, "project_identity_type", null)
   project_identity_ids       = lookup(var.foundry_config, "project_identity_ids", [])
-  openai_resource_id         = var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? module.openai[0].id : lookup(var.foundry_config, "openai_resource_id", null)
-  openai_connection_name     = lookup(var.foundry_config, "openai_connection_name", null)
+  deployments                = lookup(var.foundry_config, "deployments", {})
 
   tags = var.tags
 
-  depends_on = [module.keyvault, module.openai]
+  depends_on = [module.keyvault]
 }
 
 # OpenAI Module
