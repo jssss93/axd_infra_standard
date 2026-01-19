@@ -11,10 +11,7 @@
 │   │   └── rg/               # Resource Group 모듈
 │   ├── networking/            # 네트워크 관련
 │   │   ├── core/             # VNet + Subnets + Application Gateway (통합)
-│   │   ├── gateway/          # Application Gateway (독립 모듈)
-│   │   ├── pe/               # Private Endpoints + Private DNS Zones 통합
-│   │   ├── private-dns-zone/ # Private DNS Zone (개별 모듈)
-│   │   └── private-endpoint/  # Private Endpoint (개별 모듈)
+│   │   └── pe/               # Private Endpoints + Private DNS Zones 통합
 │   ├── compute/              # 컴퓨팅 리소스
 │   │   └── container-apps/   # Container Apps, VM, Log Analytics
 │   └── services/             # PaaS 서비스들
@@ -164,6 +161,151 @@ tags = {
 }
 ```
 
+## 배포 순서
+
+Terraform은 리소스 간 의존성을 자동으로 감지하여 올바른 순서로 배포합니다. 다음은 실제 배포 순서입니다:
+
+### 배포 순서 개요
+
+```
+1. Resource Group (Foundation)
+   ↓
+2. Networking Core (VNet + Subnets) ─┐
+   ↓                                  │ (병렬 배포 가능)
+3. Infrastructure Services (PaaS) ───┘
+   ↓
+4. Compute (Container Apps + VMs)
+   ↓
+5. Application Gateway (Container Apps FQDN 자동 연결)
+   ↓
+6. Private Endpoints (선택사항)
+```
+
+### 단계별 상세 설명
+
+#### 1단계: Resource Group 생성
+- **모듈**: `module.rg`
+- **의존성**: 없음 (최상위 리소스)
+- **생성 시간**: ~5초
+- **생성 리소스**: Resource Group
+
+#### 2단계: Networking Core 생성
+- **모듈**: `module.networking_core`
+- **의존성**: `module.rg` (Resource Group)
+- **생성 시간**: ~30초
+- **생성 리소스**:
+  - Virtual Network
+  - Subnets (agw, cae, vm, pe 등)
+  - Application Gateway (선택사항, 하지만 이 단계에서는 생성되지 않고 5단계에서 생성됨)
+
+**참고**: Application Gateway는 실제로는 Container Apps FQDN이 필요하므로 5단계에서 생성됩니다.
+
+#### 3단계: Infrastructure Services 생성 (병렬 가능)
+- **모듈**: `module.infra`
+- **의존성**: `module.rg` (Resource Group)
+- **생성 시간**: 서비스별로 다름 (각 2-10분)
+- **생성 리소스** (활성화된 경우):
+  - Container Registry (ACR)
+  - Key Vault
+  - Cosmos DB
+  - PostgreSQL
+  - AI Foundry
+  - OpenAI
+
+이 단계는 Networking Core와 병렬로 배포될 수 있습니다.
+
+#### 4단계: Compute 리소스 생성
+- **모듈**: `module.compute`
+- **의존성**: 
+  - `module.rg` (Resource Group)
+  - `module.networking_core` (Subnet ID)
+  - `module.infra` (Key Vault ID - 명시적 `depends_on`)
+- **생성 시간**: ~5-10분
+- **생성 리소스**:
+  - Log Analytics Workspace (없는 경우)
+  - Container App Environment
+  - Container Apps (FQDN 자동 생성)
+  - Virtual Machines (선택사항)
+
+#### 5단계: Application Gateway 생성
+- **모듈**: `module.networking_core` (내부)
+- **의존성**: 
+  - `module.compute` (Container Apps FQDN)
+- **생성 시간**: ~10-15분
+- **생성 리소스**:
+  - Public IP (선택사항)
+  - Application Gateway
+  - Backend Pool에 Container Apps FQDN 자동 연결
+
+**참고**: Application Gateway는 Container Apps의 FQDN이 생성된 후에 배포됩니다.
+
+#### 6단계: Private Endpoints 생성 (선택사항)
+- **모듈**: `module.networking_pe`
+- **의존성**: 
+  - `module.rg` (Resource Group)
+  - `module.networking_core` (VNet ID, Subnet ID)
+  - `module.infra` (PaaS 서비스 리소스 ID - 명시적 `depends_on`)
+- **생성 시간**: ~5-10분
+- **생성 리소스** (활성화된 경우):
+  - Private DNS Zones
+  - Private Endpoints (Key Vault, Cosmos DB, PostgreSQL, ACR)
+
+### 예상 전체 배포 시간
+
+| 단계 | 리소스 | 예상 시간 |
+|------|--------|----------|
+| 1단계 | Resource Group | ~5초 |
+| 2단계 | Networking Core (VNet + Subnets) | ~30초 |
+| 3단계 | Infrastructure Services (PaaS) | ~2-10분 (서비스별) |
+| 4단계 | Container Apps Environment + Apps | ~5-10분 |
+| 5단계 | Application Gateway | ~10-15분 |
+| 6단계 | Private Endpoints (선택사항) | ~5-10분 |
+| **전체** | **모든 리소스** | **~20-35분** |
+
+### 배포 순서 확인 방법
+
+```bash
+# Terraform이 감지한 의존성 그래프 확인
+terraform graph | dot -Tsvg > graph.svg
+
+# 또는 텍스트 형식으로 확인
+terraform graph
+```
+
+### 단계별 배포 (선택사항)
+
+필요한 경우 단계별로 배포할 수 있습니다:
+
+```bash
+# 1단계: Resource Group만 생성
+terraform apply -target=module.rg
+
+# 2단계: Network만 생성
+terraform apply -target=module.networking_core
+
+# 3단계: Infrastructure Services만 생성
+terraform apply -target=module.infra
+
+# 4단계: Compute만 생성
+terraform apply -target=module.compute
+
+# 5단계: Application Gateway만 생성 (networking_core 모듈 내부)
+terraform apply -target=module.networking_core
+
+# 6단계: Private Endpoints만 생성
+terraform apply -target=module.networking_pe[0]
+
+# 전체 배포
+terraform apply
+```
+
+### 주의사항
+
+1. **Container Apps FQDN 대기**: Application Gateway는 Container Apps의 FQDN이 생성된 후에 배포됩니다.
+2. **Key Vault 의존성**: Container Apps 모듈은 Key Vault가 생성된 후에 배포됩니다 (`depends_on = [module.infra]`).
+3. **Private Endpoints 의존성**: Private Endpoints는 PaaS 서비스들이 생성된 후에 배포됩니다 (`depends_on = [module.infra]`).
+4. **Application Gateway 배포 시간**: Application Gateway는 가장 오래 걸리는 리소스입니다 (10-15분).
+
 ## 모듈 설명
 
 ### Foundation 모듈
@@ -236,18 +378,6 @@ Private Endpoints와 Private DNS Zones를 통합하여 관리하는 모듈입니
 **출력:**
 - `private_dns_zone_ids`: Private DNS Zone ID 맵
 - `private_endpoint_ids`: Private Endpoint ID 맵
-
-#### Gateway 모듈 (`modules/networking/gateway/`)
-
-Application Gateway를 독립적으로 생성하는 모듈입니다.
-
-#### Private DNS Zone 모듈 (`modules/networking/private-dns-zone/`)
-
-Private DNS Zone을 개별적으로 생성하는 모듈입니다.
-
-#### Private Endpoint 모듈 (`modules/networking/private-endpoint/`)
-
-Private Endpoint를 개별적으로 생성하는 모듈입니다.
 
 ### Compute 모듈
 

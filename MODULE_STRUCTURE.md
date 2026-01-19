@@ -9,10 +9,7 @@ modules/
 │
 ├── networking/          # 네트워크 관련
 │   ├── core/           # VNet, Subnets, Application Gateway (통합)
-│   ├── gateway/        # Application Gateway (독립 모듈)
-│   ├── pe/             # Private Endpoints + Private DNS Zones 통합
-│   ├── private-dns-zone/  # Private DNS Zone (개별 모듈)
-│   └── private-endpoint/  # Private Endpoint (개별 모듈)
+│   └── pe/             # Private Endpoints + Private DNS Zones 통합
 │
 ├── compute/            # 컴퓨팅 리소스
 │   └── container-apps/  # Container Apps, VM, Log Analytics
