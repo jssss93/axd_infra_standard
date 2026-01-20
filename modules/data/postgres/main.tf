@@ -19,7 +19,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
     content {
       day_of_week  = maintenance_window.value.day_of_week
       start_hour   = maintenance_window.value.start_hour
-      start_minute = lookup(maintenance_window.value, "start_minute", 0)
+      start_minute = try(maintenance_window.value.start_minute, 0)
     }
   }
 
@@ -27,7 +27,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
     for_each = var.high_availability != null ? [var.high_availability] : []
     content {
       mode                      = high_availability.value.mode
-      standby_availability_zone = lookup(high_availability.value, "standby_availability_zone", null)
+      standby_availability_zone = try(high_availability.value.standby_availability_zone, null)
     }
   }
 
@@ -63,11 +63,11 @@ resource "azurerm_postgresql_flexible_server_database" "this" {
 
   name      = each.value.name
   server_id = azurerm_postgresql_flexible_server.this.id
-  charset   = lookup(each.value, "charset", var.default_charset != null ? var.default_charset : "UTF8")
-  collation = lookup(each.value, "collation", var.default_collation != null ? var.default_collation : "en_US.utf8")
+  charset   = try(each.value.charset, var.default_charset != null ? var.default_charset : "UTF8")
+  collation = try(each.value.collation, var.default_collation != null ? var.default_collation : "en_US.utf8")
 
   # tags는 PostgreSQL Flexible Server Database에서 지원되지 않음
-  # tags = merge(var.tags, lookup(each.value, "tags", {}))
+  # tags = merge(var.tags, try(each.value.tags, {}))
 }
 
 # PostgreSQL Flexible Server Configuration

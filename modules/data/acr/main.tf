@@ -11,9 +11,9 @@ resource "azurerm_container_registry" "this" {
     for_each = var.georeplications != null ? var.georeplications : []
     content {
       location                  = georeplications.value.location
-      regional_endpoint_enabled = lookup(georeplications.value, "regional_endpoint_enabled", true)
-      zone_redundancy_enabled   = lookup(georeplications.value, "zone_redundancy_enabled", false)
-      tags                      = lookup(georeplications.value, "tags", {})
+      regional_endpoint_enabled = try(georeplications.value.regional_endpoint_enabled, true)
+      zone_redundancy_enabled   = try(georeplications.value.zone_redundancy_enabled, false)
+      tags                      = try(georeplications.value.tags, {})
     }
   }
 
@@ -23,7 +23,7 @@ resource "azurerm_container_registry" "this" {
       default_action = network_rule_set.value.default_action
 
       dynamic "ip_rule" {
-        for_each = lookup(network_rule_set.value, "ip_rules", [])
+        for_each = try(network_rule_set.value.ip_rules, [])
         content {
           action   = ip_rule.value.action
           ip_range = ip_rule.value.ip_range
@@ -32,7 +32,7 @@ resource "azurerm_container_registry" "this" {
 
       # virtual_network는 AzureRM 4.40에서 network_rule_set 내부에서 지원되지 않을 수 있음
       # dynamic "virtual_network" {
-      #   for_each = lookup(network_rule_set.value, "virtual_networks", [])
+      #   for_each = try(network_rule_set.value.virtual_networks, [])
       #   content {
       #     action    = virtual_network.value.action
       #     subnet_id = virtual_network.value.subnet_id
@@ -61,8 +61,8 @@ resource "azurerm_container_registry" "this" {
     for_each = var.encryption != null ? [var.encryption] : []
     content {
       # enabled는 AzureRM 4.40에서 지원되지 않을 수 있음
-      key_vault_key_id   = lookup(encryption.value, "key_vault_key_id", null)
-      identity_client_id = lookup(encryption.value, "identity_client_id", null)
+      key_vault_key_id   = try(encryption.value.key_vault_key_id, null)
+      identity_client_id = try(encryption.value.identity_client_id, null)
     }
   }
 

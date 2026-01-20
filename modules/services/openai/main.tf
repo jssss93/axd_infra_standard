@@ -26,17 +26,17 @@ resource "azurerm_cognitive_deployment" "this" {
   cognitive_account_id = azurerm_cognitive_account.openai.id
 
   model {
-    format  = lookup(each.value, "model_format", var.default_model_format != null ? var.default_model_format : "OpenAI")
+    format  = try(each.value.model_format, var.default_model_format != null ? var.default_model_format : "OpenAI")
     name    = each.value.model_name
-    version = lookup(each.value, "model_version", null)
+    version = try(each.value.model_version, null)
   }
 
-  rai_policy_name        = lookup(each.value, "rai_policy_name", null)
-  version_upgrade_option = lookup(each.value, "version_upgrade_option", var.default_version_upgrade_option != null ? var.default_version_upgrade_option : "OnceNewDefaultVersionAvailable")
+  rai_policy_name        = try(each.value.rai_policy_name, null)
+  version_upgrade_option = try(each.value.version_upgrade_option, var.default_version_upgrade_option != null ? var.default_version_upgrade_option : "OnceNewDefaultVersionAvailable")
 
   sku {
-    name     = lookup(each.value.scale, "name", lookup(each.value.scale, "type", var.default_deployment_sku_type != null ? var.default_deployment_sku_type : "Standard"))
-    capacity = lookup(each.value.scale, "capacity", null)
+    name     = try(each.value.scale.name, try(each.value.scale.type, var.default_deployment_sku_type != null ? var.default_deployment_sku_type : "Standard"))
+    capacity = try(each.value.scale.capacity, null)
   }
 
   # scale 블록은 AzureRM 4.40에서 지원되지 않음

@@ -70,12 +70,12 @@ output "cosmos_db_secondary_key" {
 
 output "container_registry_admin_username" {
   description = "The Username associated with the Container Registry Admin account"
-  value       = var.container_registry_enabled && var.container_registry_config != null && lookup(var.container_registry_config, "admin_enabled", false) && length(module.acr) > 0 ? module.acr[0].admin_username : null
+  value       = var.container_registry_enabled && var.container_registry_config != null && try(var.container_registry_config.admin_enabled, false) && length(module.acr) > 0 ? module.acr[0].admin_username : null
 }
 
 output "container_registry_admin_password" {
   description = "The Password associated with the Container Registry Admin account"
-  value       = var.container_registry_enabled && var.container_registry_config != null && lookup(var.container_registry_config, "admin_enabled", false) && length(module.acr) > 0 ? module.acr[0].admin_password : null
+  value       = var.container_registry_enabled && var.container_registry_config != null && try(var.container_registry_config.admin_enabled, false) && length(module.acr) > 0 ? module.acr[0].admin_password : null
   sensitive   = true
 }
 

@@ -39,11 +39,11 @@ resource "azurerm_container_app" "this" {
   name                         = each.value.name
   container_app_environment_id = azurerm_container_app_environment.this.id
   resource_group_name          = var.resource_group_name
-  revision_mode                = lookup(each.value, "revision_mode", var.default_revision_mode != null ? var.default_revision_mode : "Single")
+  revision_mode                = try(each.value.revision_mode, var.default_revision_mode != null ? var.default_revision_mode : "Single")
 
   # Add identity if Key Vault secrets are referenced and this app uses secrets
   dynamic "identity" {
-    for_each = var.key_vault_id != null && length(lookup(each.value, "secrets", [])) > 0 ? [1] : []
+    for_each = var.key_vault_id != null && length(try(each.value.secrets, [])) > 0 ? [1] : []
     content {
       type = var.container_app_identity_type != null ? var.container_app_identity_type : "SystemAssigned"
     }
@@ -55,7 +55,7 @@ resource "azurerm_container_app" "this" {
     for_each = var.key_vault_id != null ? {
       for secret_name, secret_id in var.key_vault_secrets : secret_name => secret_id
       if secret_id != null && contains(toset([
-        for s in lookup(each.value, "secrets", []) : s.secret_name
+        for s in try(each.value.secrets, []) : s.secret_name
       ]), secret_name)
     } : {}
     content {
@@ -66,17 +66,17 @@ resource "azurerm_container_app" "this" {
   }
 
   template {
-    min_replicas = lookup(each.value, "min_replicas", var.default_min_replicas != null ? var.default_min_replicas : 0)
-    max_replicas = lookup(each.value, "max_replicas", var.default_max_replicas != null ? var.default_max_replicas : 10)
+    min_replicas = try(each.value.min_replicas, var.default_min_replicas != null ? var.default_min_replicas : 0)
+    max_replicas = try(each.value.max_replicas, var.default_max_replicas != null ? var.default_max_replicas : 10)
 
     container {
-      name   = lookup(each.value, "container_name", null) != null ? each.value.container_name : each.key # Container 블록의 name은 키를 사용 (또는 명시적으로 지정)
+      name   = try(each.value.container_name, null) != null ? each.value.container_name : each.key # Container 블록의 name은 키를 사용 (또는 명시적으로 지정)
       image  = each.value.image
-      cpu    = lookup(each.value, "cpu", var.default_cpu != null ? var.default_cpu : 0.25)
-      memory = lookup(each.value, "memory", var.default_memory != null ? var.default_memory : "0.5Gi")
+      cpu    = try(each.value.cpu, var.default_cpu != null ? var.default_cpu : 0.25)
+      memory = try(each.value.memory, var.default_memory != null ? var.default_memory : "0.5Gi")
 
       dynamic "env" {
-        for_each = lookup(each.value, "env_vars", {})
+        for_each = try(each.value.env_vars, {})
         content {
           name  = env.key
           value = env.value
@@ -84,7 +84,7 @@ resource "azurerm_container_app" "this" {
       }
 
       dynamic "env" {
-        for_each = lookup(each.value, "secrets", [])
+        for_each = try(each.value.secrets, [])
         content {
           name        = env.value.name
           secret_name = env.value.secret_name
@@ -94,26 +94,26 @@ resource "azurerm_container_app" "this" {
   }
 
   dynamic "ingress" {
-    for_each = lookup(each.value, "ingress", null) != null ? [each.value.ingress] : []
+    for_each = try(each.value.ingress, null) != null ? [each.value.ingress] : []
     content {
-      external_enabled = lookup(ingress.value, "external_enabled", true)
+      external_enabled = try(ingress.value.external_enabled, true)
       target_port      = ingress.value.target_port
-      transport        = lookup(ingress.value, "transport", "auto")
+      transport        = try(ingress.value.transport, "auto")
 
       dynamic "traffic_weight" {
-        for_each = lookup(ingress.value, "traffic_weight", null) != null ? [ingress.value.traffic_weight] : [{
+        for_each = try(ingress.value.traffic_weight, null) != null ? [ingress.value.traffic_weight] : [{
           percentage      = 100
           latest_revision = true
         }]
         content {
           percentage      = traffic_weight.value.percentage
-          latest_revision = lookup(traffic_weight.value, "latest_revision", true)
+          latest_revision = try(traffic_weight.value.latest_revision, true)
         }
       }
     }
   }
 
-  tags = merge(var.tags, lookup(each.value, "tags", {}))
+  tags = merge(var.tags, try(each.value.tags, {}))
 
   # workload_profile_name은 Azure가 기본값(Consumption)으로 자동 설정하므로 변경 무시
   lifecycle {
@@ -136,33 +136,33 @@ resource "azurerm_network_interface" "vm" {
   ip_configuration {
     name                          = "internal"
     subnet_id                     = each.value.subnet_id
-    private_ip_address_allocation = lookup(each.value, "private_ip_address_allocation", "Dynamic")
-    private_ip_address            = lookup(each.value, "private_ip_address", null)
-    public_ip_address_id          = lookup(each.value, "public_ip_enabled", false) ? azurerm_public_ip.vm[each.key].id : null
+    private_ip_address_allocation = try(each.value.private_ip_address_allocation, "Dynamic")
+    private_ip_address            = try(each.value.private_ip_address, null)
+    public_ip_address_id          = try(each.value.public_ip_enabled, false) ? azurerm_public_ip.vm[each.key].id : null
   }
 
-  tags = merge(var.tags, lookup(each.value, "tags", {}))
+  tags = merge(var.tags, try(each.value.tags, {}))
 }
 
 resource "azurerm_public_ip" "vm" {
   for_each = {
     for k, v in var.virtual_machines : k => v
-    if lookup(v, "public_ip_enabled", false)
+    if try(v.public_ip_enabled, false)
   }
 
   name                = "${each.value.name}-pip"
   location            = var.location
   resource_group_name = var.resource_group_name
-  allocation_method   = lookup(each.value, "public_ip_allocation_method", "Static")
-  sku                 = lookup(each.value, "public_ip_sku", "Standard")
+  allocation_method   = try(each.value.public_ip_allocation_method, "Static")
+  sku                 = try(each.value.public_ip_sku, "Standard")
 
-  tags = merge(var.tags, lookup(each.value, "tags", {}))
+  tags = merge(var.tags, try(each.value.tags, {}))
 }
 
 resource "azurerm_linux_virtual_machine" "this" {
   for_each = {
     for k, v in var.virtual_machines : k => v
-    if lookup(v, "os_type", "Linux") == "Linux"
+    if try(v.os_type, "Linux") == "Linux"
   }
 
   name                  = each.value.name
@@ -179,37 +179,37 @@ resource "azurerm_linux_virtual_machine" "this" {
 
   os_disk {
     name                 = "${each.value.name}-os-disk"
-    caching              = lookup(each.value, "os_disk_caching", "ReadWrite")
-    storage_account_type = lookup(each.value, "os_disk_storage_account_type", "Premium_LRS")
-    disk_size_gb         = lookup(each.value, "os_disk_size_gb", null)
+    caching              = try(each.value.os_disk_caching, "ReadWrite")
+    storage_account_type = try(each.value.os_disk_storage_account_type, "Premium_LRS")
+    disk_size_gb         = try(each.value.os_disk_size_gb, null)
   }
 
   source_image_reference {
     publisher = each.value.source_image_reference.publisher
     offer     = each.value.source_image_reference.offer
     sku       = each.value.source_image_reference.sku
-    version   = lookup(each.value.source_image_reference, "version", "latest")
+    version   = try(each.value.source_image_reference.version, "latest")
   }
 
   dynamic "identity" {
-    for_each = lookup(each.value, "identity_type", null) != null ? [1] : []
+    for_each = try(each.value.identity_type, null) != null ? [1] : []
     content {
       type         = each.value.identity_type
-      identity_ids = lookup(each.value, "identity_ids", [])
+      identity_ids = try(each.value.identity_ids, [])
     }
   }
 
   boot_diagnostics {
-    storage_account_uri = lookup(each.value, "boot_diagnostics_storage_account_uri", null)
+    storage_account_uri = try(each.value.boot_diagnostics_storage_account_uri, null)
   }
 
-  tags = merge(var.tags, lookup(each.value, "tags", {}))
+  tags = merge(var.tags, try(each.value.tags, {}))
 }
 
 resource "azurerm_windows_virtual_machine" "this" {
   for_each = {
     for k, v in var.virtual_machines : k => v
-    if lookup(v, "os_type", "Linux") == "Windows"
+    if try(v.os_type, "Linux") == "Windows"
   }
 
   name                  = each.value.name
@@ -222,29 +222,29 @@ resource "azurerm_windows_virtual_machine" "this" {
 
   os_disk {
     name                 = "${each.value.name}-os-disk"
-    caching              = lookup(each.value, "os_disk_caching", "ReadWrite")
-    storage_account_type = lookup(each.value, "os_disk_storage_account_type", "Premium_LRS")
-    disk_size_gb         = lookup(each.value, "os_disk_size_gb", null)
+    caching              = try(each.value.os_disk_caching, "ReadWrite")
+    storage_account_type = try(each.value.os_disk_storage_account_type, "Premium_LRS")
+    disk_size_gb         = try(each.value.os_disk_size_gb, null)
   }
 
   source_image_reference {
     publisher = each.value.source_image_reference.publisher
     offer     = each.value.source_image_reference.offer
     sku       = each.value.source_image_reference.sku
-    version   = lookup(each.value.source_image_reference, "version", "latest")
+    version   = try(each.value.source_image_reference.version, "latest")
   }
 
   dynamic "identity" {
-    for_each = lookup(each.value, "identity_type", null) != null ? [1] : []
+    for_each = try(each.value.identity_type, null) != null ? [1] : []
     content {
       type         = each.value.identity_type
-      identity_ids = lookup(each.value, "identity_ids", [])
+      identity_ids = try(each.value.identity_ids, [])
     }
   }
 
   boot_diagnostics {
-    storage_account_uri = lookup(each.value, "boot_diagnostics_storage_account_uri", null)
+    storage_account_uri = try(each.value.boot_diagnostics_storage_account_uri, null)
   }
 
-  tags = merge(var.tags, lookup(each.value, "tags", {}))
+  tags = merge(var.tags, try(each.value.tags, {}))
 }

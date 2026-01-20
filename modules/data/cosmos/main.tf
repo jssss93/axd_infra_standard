@@ -23,7 +23,7 @@ resource "azurerm_cosmosdb_account" "this" {
     content {
       location          = geo_location.value.location
       failover_priority = geo_location.value.failover_priority
-      zone_redundant    = lookup(geo_location.value, "zone_redundant", false)
+      zone_redundant    = try(geo_location.value.zone_redundant, false)
     }
   }
 
@@ -31,9 +31,9 @@ resource "azurerm_cosmosdb_account" "this" {
     for_each = var.backup != null ? [var.backup] : []
     content {
       type                = backup.value.type
-      interval_in_minutes = lookup(backup.value, "interval_in_minutes", null)
-      retention_in_hours  = lookup(backup.value, "retention_in_hours", null)
-      storage_redundancy  = lookup(backup.value, "storage_redundancy", null)
+      interval_in_minutes = try(backup.value.interval_in_minutes, null)
+      retention_in_hours  = try(backup.value.retention_in_hours, null)
+      storage_redundancy  = try(backup.value.storage_redundancy, null)
     }
   }
 
@@ -41,10 +41,10 @@ resource "azurerm_cosmosdb_account" "this" {
     for_each = var.cors_rule != null ? [var.cors_rule] : []
     content {
       allowed_origins    = cors_rule.value.allowed_origins
-      allowed_methods    = lookup(cors_rule.value, "allowed_methods", [])
-      allowed_headers    = lookup(cors_rule.value, "allowed_headers", [])
-      exposed_headers    = lookup(cors_rule.value, "exposed_headers", [])
-      max_age_in_seconds = lookup(cors_rule.value, "max_age_in_seconds", null)
+      allowed_methods    = try(cors_rule.value.allowed_methods, [])
+      allowed_headers    = try(cors_rule.value.allowed_headers, [])
+      exposed_headers    = try(cors_rule.value.exposed_headers, [])
+      max_age_in_seconds = try(cors_rule.value.max_age_in_seconds, null)
     }
   }
 
@@ -54,7 +54,7 @@ resource "azurerm_cosmosdb_account" "this" {
     for_each = var.virtual_network_rules != null ? var.virtual_network_rules : []
     content {
       id                                   = virtual_network_rule.value.id
-      ignore_missing_vnet_service_endpoint = lookup(virtual_network_rule.value, "ignore_missing_vnet_service_endpoint", false)
+      ignore_missing_vnet_service_endpoint = try(virtual_network_rule.value.ignore_missing_vnet_service_endpoint, false)
     }
   }
 
@@ -87,17 +87,17 @@ resource "azurerm_cosmosdb_sql_database" "this" {
   name                = each.value.name
   resource_group_name = var.resource_group_name
   account_name        = azurerm_cosmosdb_account.this.name
-  throughput          = lookup(each.value, "throughput", null)
+  throughput          = try(each.value.throughput, null)
 
   dynamic "autoscale_settings" {
-    for_each = lookup(each.value, "autoscale_settings", null) != null ? [each.value.autoscale_settings] : []
+    for_each = try(each.value.autoscale_settings, null) != null ? [each.value.autoscale_settings] : []
     content {
       max_throughput = autoscale_settings.value.max_throughput
     }
   }
 
   # tags는 Cosmos DB SQL Database에서 지원되지 않음
-  # tags = merge(var.tags, lookup(each.value, "tags", {}))
+  # tags = merge(var.tags, try(each.value.tags, {}))
 }
 
 # Cosmos DB Containers
@@ -109,29 +109,29 @@ resource "azurerm_cosmosdb_sql_container" "this" {
   account_name        = azurerm_cosmosdb_account.this.name
   database_name       = each.value.database_name
   partition_key_paths = [each.value.partition_key_path] # AzureRM 4.40에서는 partition_key_paths (복수형) 사용
-  throughput          = lookup(each.value, "throughput", null)
+  throughput          = try(each.value.throughput, null)
 
   dynamic "autoscale_settings" {
-    for_each = lookup(each.value, "autoscale_settings", null) != null ? [each.value.autoscale_settings] : []
+    for_each = try(each.value.autoscale_settings, null) != null ? [each.value.autoscale_settings] : []
     content {
       max_throughput = autoscale_settings.value.max_throughput
     }
   }
 
   dynamic "indexing_policy" {
-    for_each = lookup(each.value, "indexing_policy", null) != null ? [each.value.indexing_policy] : []
+    for_each = try(each.value.indexing_policy, null) != null ? [each.value.indexing_policy] : []
     content {
-      indexing_mode = lookup(indexing_policy.value, "indexing_mode", var.default_indexing_mode != null ? var.default_indexing_mode : "consistent")
+      indexing_mode = try(indexing_policy.value.indexing_mode, var.default_indexing_mode != null ? var.default_indexing_mode : "consistent")
 
       dynamic "included_path" {
-        for_each = lookup(indexing_policy.value, "included_paths", [])
+        for_each = try(indexing_policy.value.included_paths, [])
         content {
           path = included_path.value
         }
       }
 
       dynamic "excluded_path" {
-        for_each = lookup(indexing_policy.value, "excluded_paths", [])
+        for_each = try(indexing_policy.value.excluded_paths, [])
         content {
           path = excluded_path.value
         }
@@ -140,12 +140,12 @@ resource "azurerm_cosmosdb_sql_container" "this" {
   }
 
   dynamic "unique_key" {
-    for_each = lookup(each.value, "unique_keys", [])
+    for_each = try(each.value.unique_keys, [])
     content {
       paths = unique_key.value.paths
     }
   }
 
   # tags는 Cosmos DB SQL Container에서 지원되지 않음
-  # tags = merge(var.tags, lookup(each.value, "tags", {}))
+  # tags = merge(var.tags, try(each.value.tags, {}))
 }

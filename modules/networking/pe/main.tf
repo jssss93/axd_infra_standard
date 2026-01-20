@@ -17,8 +17,8 @@ resource "azurerm_private_dns_zone_virtual_network_link" "this" {
           key                  = "${zone_key}-${idx}"
           zone_key             = zone_key
           vnet_id              = vnet_id
-          link_name            = lookup(zone, "virtual_network_link_name", null)
-          registration_enabled = lookup(zone, "registration_enabled", false)
+          link_name            = try(zone.virtual_network_link_name, null)
+          registration_enabled = try(zone.registration_enabled, false)
         }
       ]
     ]) : link.key => link
@@ -46,17 +46,17 @@ resource "azurerm_private_endpoint" "this" {
   subnet_id           = each.value.subnet_id
 
   private_service_connection {
-    name                           = lookup(each.value, "private_service_connection_name", null) != null ? each.value.private_service_connection_name : "${each.value.name}-connection"
+    name                           = try(each.value.private_service_connection_name, null) != null ? each.value.private_service_connection_name : "${each.value.name}-connection"
     private_connection_resource_id = each.value.private_connection_resource_id
     subresource_names              = each.value.subresource_names
-    is_manual_connection           = lookup(each.value, "is_manual_connection", false)
-    request_message                = lookup(each.value, "request_message", null)
+    is_manual_connection           = try(each.value.is_manual_connection, false)
+    request_message                = try(each.value.request_message, null)
   }
 
   dynamic "private_dns_zone_group" {
-    for_each = lookup(each.value, "private_dns_zone_key", null) != null && contains(keys(azurerm_private_dns_zone.this), each.value.private_dns_zone_key) ? [1] : []
+    for_each = try(each.value.private_dns_zone_key, null) != null && contains(keys(azurerm_private_dns_zone.this), each.value.private_dns_zone_key) ? [1] : []
     content {
-      name                 = lookup(each.value, "private_dns_zone_group_name", null) != null ? each.value.private_dns_zone_group_name : "${each.value.name}-dns-zone-group"
+      name                 = try(each.value.private_dns_zone_group_name, null) != null ? each.value.private_dns_zone_group_name : "${each.value.name}-dns-zone-group"
       private_dns_zone_ids = [azurerm_private_dns_zone.this[each.value.private_dns_zone_key].id]
     }
   }

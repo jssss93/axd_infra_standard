@@ -1,4 +1,6 @@
 # Data source for existing Storage Account (if name is provided but ID is not)
+# 기존 리소스를 찾지 못하면 data source가 실패하므로, try()로 감싸거나 제거
+# 대신 storage_account_name이 있으면 바로 resource를 생성하도록 함
 data "azurerm_storage_account" "foundry" {
   count = var.storage_account_id == null && var.storage_account_name != null ? 1 : 0
 
@@ -7,8 +9,12 @@ data "azurerm_storage_account" "foundry" {
 }
 
 # Storage Account for Foundry (if not provided and not found via data source)
+# storage_account_name이 있지만 data source에서 찾지 못한 경우도 새로 생성
 resource "azurerm_storage_account" "foundry" {
-  count = var.storage_account_id == null && (var.storage_account_name == null || length(data.azurerm_storage_account.foundry) == 0) ? 1 : 0
+  count = var.storage_account_id == null && (
+    var.storage_account_name == null || 
+    (length(data.azurerm_storage_account.foundry) == 0 && var.storage_account_name != null)
+  ) ? 1 : 0
 
   name                     = var.storage_account_name != null ? var.storage_account_name : "${replace(var.name, "-", "")}${var.storage_account_name_suffix != null ? var.storage_account_name_suffix : "sa"}"
   resource_group_name      = var.resource_group_name

@@ -21,9 +21,9 @@ resource "azurerm_key_vault" "this" {
     for_each = var.network_acls != null ? [var.network_acls] : []
     content {
       default_action             = network_acls.value.default_action
-      bypass                     = lookup(network_acls.value, "bypass", "AzureServices")
-      ip_rules                   = lookup(network_acls.value, "ip_rules", [])
-      virtual_network_subnet_ids = lookup(network_acls.value, "virtual_network_subnet_ids", [])
+      bypass                     = try(network_acls.value.bypass, "AzureServices")
+      ip_rules                   = try(network_acls.value.ip_rules, [])
+      virtual_network_subnet_ids = try(network_acls.value.virtual_network_subnet_ids, [])
     }
   }
 
@@ -31,8 +31,8 @@ resource "azurerm_key_vault" "this" {
     for_each = var.contacts != null ? var.contacts : []
     content {
       email = contact.value.email
-      name  = lookup(contact.value, "name", null)
-      phone = lookup(contact.value, "phone", null)
+      name  = try(contact.value.name, null)
+      phone = try(contact.value.phone, null)
     }
   }
 
@@ -50,9 +50,9 @@ resource "azurerm_key_vault_access_policy" "this" {
   tenant_id    = var.tenant_id
   object_id    = each.value.object_id
 
-  key_permissions         = lookup(each.value, "key_permissions", [])
-  secret_permissions      = lookup(each.value, "secret_permissions", [])
-  certificate_permissions = lookup(each.value, "certificate_permissions", [])
-  storage_permissions     = lookup(each.value, "storage_permissions", [])
+  key_permissions         = try(each.value.key_permissions, [])
+  secret_permissions      = try(each.value.secret_permissions, [])
+  certificate_permissions = try(each.value.certificate_permissions, [])
+  storage_permissions     = try(each.value.storage_permissions, [])
 }
 

@@ -10,18 +10,18 @@ module "keyvault" {
   name                            = var.key_vault_name
   resource_group_name             = var.resource_group_name
   location                        = var.location
-  tenant_id                       = lookup(var.key_vault_config, "tenant_id", null) != null ? var.key_vault_config.tenant_id : data.azurerm_client_config.current.tenant_id
-  sku_name                        = lookup(var.key_vault_config, "sku_name", "standard")
-  enabled_for_deployment          = lookup(var.key_vault_config, "enabled_for_deployment", false)
-  enabled_for_disk_encryption     = lookup(var.key_vault_config, "enabled_for_disk_encryption", false)
-  enabled_for_template_deployment = lookup(var.key_vault_config, "enabled_for_template_deployment", false)
-  rbac_authorization_enabled      = lookup(var.key_vault_config, "rbac_authorization_enabled", true)
-  public_network_access_enabled   = lookup(var.key_vault_config, "public_network_access_enabled", null)
-  purge_protection_enabled        = lookup(var.key_vault_config, "purge_protection_enabled", false)
-  soft_delete_retention_days      = lookup(var.key_vault_config, "soft_delete_retention_days", 90)
-  network_acls                    = lookup(var.key_vault_config, "network_acls", null)
-  contacts                        = lookup(var.key_vault_config, "contacts", null)
-  access_policies                 = lookup(var.key_vault_config, "access_policies", {})
+  tenant_id                       = try(var.key_vault_config.tenant_id, null) != null ? var.key_vault_config.tenant_id : data.azurerm_client_config.current.tenant_id
+  sku_name                        = try(var.key_vault_config.sku_name, "standard")
+  enabled_for_deployment          = try(var.key_vault_config.enabled_for_deployment, false)
+  enabled_for_disk_encryption     = try(var.key_vault_config.enabled_for_disk_encryption, false)
+  enabled_for_template_deployment = try(var.key_vault_config.enabled_for_template_deployment, false)
+  rbac_authorization_enabled      = try(var.key_vault_config.rbac_authorization_enabled, true)
+  public_network_access_enabled   = try(var.key_vault_config.public_network_access_enabled, null)
+  purge_protection_enabled        = try(var.key_vault_config.purge_protection_enabled, false)
+  soft_delete_retention_days      = try(var.key_vault_config.soft_delete_retention_days, 90)
+  network_acls                    = try(var.key_vault_config.network_acls, null)
+  contacts                        = try(var.key_vault_config.contacts, null)
+  access_policies                 = try(var.key_vault_config.access_policies, {})
 
   tags = var.tags
 }
@@ -40,16 +40,16 @@ module "acr" {
   name                          = var.container_registry_name
   resource_group_name           = var.resource_group_name
   location                      = var.location
-  sku                           = lookup(var.container_registry_config, "sku", "Basic")
-  admin_enabled                 = lookup(var.container_registry_config, "admin_enabled", false)
-  public_network_access_enabled = lookup(var.container_registry_config, "public_network_access_enabled", null)
-  georeplications               = lookup(var.container_registry_config, "georeplications", null)
-  network_rule_set              = lookup(var.container_registry_config, "network_rule_set", null)
-  retention_policy              = lookup(var.container_registry_config, "retention_policy", null)
-  trust_policy                  = lookup(var.container_registry_config, "trust_policy", null)
-  encryption                    = lookup(var.container_registry_config, "encryption", null)
-  identity_type                 = lookup(var.container_registry_config, "identity_type", "SystemAssigned")
-  identity_ids                  = lookup(var.container_registry_config, "identity_ids", [])
+  sku                           = try(var.container_registry_config.sku, "Basic")
+  admin_enabled                 = try(var.container_registry_config.admin_enabled, false)
+  public_network_access_enabled = try(var.container_registry_config.public_network_access_enabled, null)
+  georeplications               = try(var.container_registry_config.georeplications, null)
+  network_rule_set              = try(var.container_registry_config.network_rule_set, null)
+  retention_policy              = try(var.container_registry_config.retention_policy, null)
+  trust_policy                  = try(var.container_registry_config.trust_policy, null)
+  encryption                    = try(var.container_registry_config.encryption, null)
+  identity_type                 = try(var.container_registry_config.identity_type, "SystemAssigned")
+  identity_ids                  = try(var.container_registry_config.identity_ids, [])
   tags                          = var.tags
 }
 
@@ -62,26 +62,26 @@ module "cosmos" {
   name                               = var.cosmos_db_name
   resource_group_name                = var.resource_group_name
   location                           = var.location
-  offer_type                         = lookup(var.cosmos_db_config, "offer_type", null)
-  kind                               = lookup(var.cosmos_db_config, "kind", null)
-  consistency_level                  = lookup(var.cosmos_db_config, "consistency_level", null)
-  max_interval_in_seconds            = lookup(var.cosmos_db_config, "max_interval_in_seconds", 5)
-  max_staleness_prefix               = lookup(var.cosmos_db_config, "max_staleness_prefix", 100)
-  capabilities                       = lookup(var.cosmos_db_config, "capabilities", null)
+  offer_type                         = try(var.cosmos_db_config.offer_type, null)
+  kind                               = try(var.cosmos_db_config.kind, null)
+  consistency_level                  = try(var.cosmos_db_config.consistency_level, null)
+  max_interval_in_seconds            = try(var.cosmos_db_config.max_interval_in_seconds, 5)
+  max_staleness_prefix               = try(var.cosmos_db_config.max_staleness_prefix, 100)
+  capabilities                       = try(var.cosmos_db_config.capabilities, null)
   geo_locations                      = var.cosmos_db_config.geo_locations
-  backup                             = lookup(var.cosmos_db_config, "backup", null)
-  cors_rule                          = lookup(var.cosmos_db_config, "cors_rule", null)
-  is_virtual_network_filter_enabled  = lookup(var.cosmos_db_config, "is_virtual_network_filter_enabled", false)
-  virtual_network_rules              = lookup(var.cosmos_db_config, "virtual_network_rules", [])
-  ip_range_filter                    = lookup(var.cosmos_db_config, "ip_range_filter", null) != null ? (can(tolist(var.cosmos_db_config.ip_range_filter)) ? var.cosmos_db_config.ip_range_filter : [var.cosmos_db_config.ip_range_filter]) : null
-  public_network_access_enabled      = lookup(var.cosmos_db_config, "public_network_access_enabled", null)
-  access_key_metadata_writes_enabled = lookup(var.cosmos_db_config, "access_key_metadata_writes_enabled", true)
-  local_authentication_disabled      = lookup(var.cosmos_db_config, "local_authentication_disabled", false)
-  identity_type                      = lookup(var.cosmos_db_config, "identity_type", "SystemAssigned")
-  identity_ids                       = lookup(var.cosmos_db_config, "identity_ids", [])
-  databases                          = lookup(var.cosmos_db_config, "databases", {})
-  containers                         = lookup(var.cosmos_db_config, "containers", {})
-  default_indexing_mode              = lookup(var.cosmos_db_config, "default_indexing_mode", null)
+  backup                             = try(var.cosmos_db_config.backup, null)
+  cors_rule                          = try(var.cosmos_db_config.cors_rule, null)
+  is_virtual_network_filter_enabled  = try(var.cosmos_db_config.is_virtual_network_filter_enabled, false)
+  virtual_network_rules              = try(var.cosmos_db_config.virtual_network_rules, [])
+  ip_range_filter                    = try(var.cosmos_db_config.ip_range_filter, null) != null ? (can(tolist(var.cosmos_db_config.ip_range_filter)) ? var.cosmos_db_config.ip_range_filter : [var.cosmos_db_config.ip_range_filter]) : null
+  public_network_access_enabled      = try(var.cosmos_db_config.public_network_access_enabled, null)
+  access_key_metadata_writes_enabled = try(var.cosmos_db_config.access_key_metadata_writes_enabled, true)
+  local_authentication_disabled      = try(var.cosmos_db_config.local_authentication_disabled, false)
+  identity_type                      = try(var.cosmos_db_config.identity_type, "SystemAssigned")
+  identity_ids                       = try(var.cosmos_db_config.identity_ids, [])
+  databases                          = try(var.cosmos_db_config.databases, {})
+  containers                         = try(var.cosmos_db_config.containers, {})
+  default_indexing_mode              = try(var.cosmos_db_config.default_indexing_mode, null)
 
   tags = var.tags
 }
@@ -95,23 +95,23 @@ module "postgres" {
   name                          = var.postgresql_name
   resource_group_name           = var.resource_group_name
   location                      = var.location
-  server_version                = lookup(var.postgresql_config, "server_version", null)
+  server_version                = try(var.postgresql_config.server_version, null)
   administrator_login           = var.postgresql_config.administrator_login
   administrator_password        = var.postgresql_config.administrator_password
-  sku_name                      = lookup(var.postgresql_config, "sku_name", null)
-  storage_mb                    = lookup(var.postgresql_config, "storage_mb", null)
-  backup_retention_days         = lookup(var.postgresql_config, "backup_retention_days", null)
-  geo_redundant_backup_enabled  = lookup(var.postgresql_config, "geo_redundant_backup_enabled", false)
-  public_network_access_enabled = lookup(var.postgresql_config, "public_network_access_enabled", null)
-  maintenance_window            = lookup(var.postgresql_config, "maintenance_window", null)
-  high_availability             = lookup(var.postgresql_config, "high_availability", null)
-  identity_type                 = lookup(var.postgresql_config, "identity_type", null)
-  identity_ids                  = lookup(var.postgresql_config, "identity_ids", [])
-  firewall_rules                = lookup(var.postgresql_config, "firewall_rules", {})
-  databases                     = lookup(var.postgresql_config, "databases", {})
-  server_configurations         = lookup(var.postgresql_config, "server_configurations", {})
-  default_charset               = lookup(var.postgresql_config, "default_charset", null)
-  default_collation             = lookup(var.postgresql_config, "default_collation", null)
+  sku_name                      = try(var.postgresql_config.sku_name, null)
+  storage_mb                    = try(var.postgresql_config.storage_mb, null)
+  backup_retention_days         = try(var.postgresql_config.backup_retention_days, null)
+  geo_redundant_backup_enabled  = try(var.postgresql_config.geo_redundant_backup_enabled, false)
+  public_network_access_enabled = try(var.postgresql_config.public_network_access_enabled, null)
+  maintenance_window            = try(var.postgresql_config.maintenance_window, null)
+  high_availability             = try(var.postgresql_config.high_availability, null)
+  identity_type                 = try(var.postgresql_config.identity_type, null)
+  identity_ids                  = try(var.postgresql_config.identity_ids, [])
+  firewall_rules                = try(var.postgresql_config.firewall_rules, {})
+  databases                     = try(var.postgresql_config.databases, {})
+  server_configurations         = try(var.postgresql_config.server_configurations, {})
+  default_charset               = try(var.postgresql_config.default_charset, null)
+  default_collation             = try(var.postgresql_config.default_collation, null)
 
   tags = var.tags
 }
