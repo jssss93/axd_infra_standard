@@ -16,13 +16,19 @@ variable "location" {
 variable "sku_name" {
   description = "The SKU name of the Cognitive Services Account"
   type        = string
-  default     = "S0"
+  default     = null # null이면 루트 locals.defaults 사용
+}
+
+variable "kind" {
+  description = "The kind of Cognitive Services Account (default: OpenAI)"
+  type        = string
+  default     = null # null이면 루트 locals.defaults 사용
 }
 
 variable "public_network_access_enabled" {
-  description = "Whether public network access is allowed"
+  description = "Whether public network access is allowed (default: false for security)"
   type        = bool
-  default     = true
+  default     = null # null이면 루트 security_defaults 사용
 }
 
 variable "identity_type" {
@@ -37,17 +43,35 @@ variable "identity_ids" {
   default     = []
 }
 
+variable "default_model_format" {
+  description = "Default model format for deployments"
+  type        = string
+  default     = null # null이면 "OpenAI" 사용
+}
+
+variable "default_version_upgrade_option" {
+  description = "Default version upgrade option for deployments"
+  type        = string
+  default     = null # null이면 "OnceNewDefaultVersionAvailable" 사용
+}
+
+variable "default_deployment_sku_type" {
+  description = "Default SKU type for deployments"
+  type        = string
+  default     = null # null이면 "Standard" 사용
+}
+
 variable "deployments" {
   description = "Map of Azure OpenAI deployments"
   type = map(object({
-    name                 = string
-    model_name           = string
-    model_format         = optional(string, "OpenAI")
-    model_version        = optional(string)
-    rai_policy_name      = optional(string)
-    version_upgrade_option = optional(string, "AutoUpgrade")
+    name                   = string
+    model_name             = string
+    model_format           = optional(string)
+    model_version          = optional(string)
+    rai_policy_name        = optional(string)
+    version_upgrade_option = optional(string)
     scale = object({
-      type     = optional(string, "Standard")
+      type     = optional(string)
       capacity = optional(number)
       family   = optional(string)
       size     = optional(string)

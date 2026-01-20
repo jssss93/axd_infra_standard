@@ -2,11 +2,11 @@ resource "azurerm_cosmosdb_account" "this" {
   name                = var.name
   location            = var.location
   resource_group_name = var.resource_group_name
-  offer_type          = var.offer_type
-  kind                = var.kind
+  offer_type          = var.offer_type != null ? var.offer_type : "Standard"
+  kind                = var.kind != null ? var.kind : "GlobalDocumentDB"
 
   consistency_policy {
-    consistency_level       = var.consistency_level
+    consistency_level       = var.consistency_level != null ? var.consistency_level : "Session"
     max_interval_in_seconds = var.max_interval_in_seconds
     max_staleness_prefix    = var.max_staleness_prefix
   }
@@ -60,7 +60,7 @@ resource "azurerm_cosmosdb_account" "this" {
 
   ip_range_filter = var.ip_range_filter != null ? toset(var.ip_range_filter) : null
 
-  public_network_access_enabled = var.public_network_access_enabled
+  public_network_access_enabled = var.public_network_access_enabled != null ? var.public_network_access_enabled : false
 
   # enable_automatic_failover와 enable_multiple_write_locations는 AzureRM 4.40에서 제거됨
   # enable_automatic_failover = var.enable_automatic_failover
@@ -108,7 +108,7 @@ resource "azurerm_cosmosdb_sql_container" "this" {
   resource_group_name = var.resource_group_name
   account_name        = azurerm_cosmosdb_account.this.name
   database_name       = each.value.database_name
-  partition_key_paths = [each.value.partition_key_path]  # AzureRM 4.40에서는 partition_key_paths (복수형) 사용
+  partition_key_paths = [each.value.partition_key_path] # AzureRM 4.40에서는 partition_key_paths (복수형) 사용
   throughput          = lookup(each.value, "throughput", null)
 
   dynamic "autoscale_settings" {
@@ -121,7 +121,7 @@ resource "azurerm_cosmosdb_sql_container" "this" {
   dynamic "indexing_policy" {
     for_each = lookup(each.value, "indexing_policy", null) != null ? [each.value.indexing_policy] : []
     content {
-      indexing_mode = lookup(indexing_policy.value, "indexing_mode", "consistent")
+      indexing_mode = lookup(indexing_policy.value, "indexing_mode", var.default_indexing_mode != null ? var.default_indexing_mode : "consistent")
 
       dynamic "included_path" {
         for_each = lookup(indexing_policy.value, "included_paths", [])

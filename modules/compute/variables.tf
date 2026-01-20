@@ -83,10 +83,10 @@ variable "virtual_machines" {
   type = map(object({
     name                          = string
     size                          = string
-    subnet_id                     = string  # Subnet ID
+    subnet_id                     = string # Subnet ID
     os_type                       = optional(string, "Linux")
     admin_username                = string
-    admin_password                 = optional(string)
+    admin_password                = optional(string)
     admin_ssh_key                 = optional(string)
     private_ip_address            = optional(string)
     private_ip_address_allocation = optional(string, "Dynamic")
@@ -102,10 +102,10 @@ variable "virtual_machines" {
       sku       = string
       version   = optional(string, "latest")
     })
-    identity_type                          = optional(string)
-    identity_ids                           = optional(list(string), [])
-    boot_diagnostics_storage_account_uri    = optional(string)
-    tags                                    = optional(map(string), {})
+    identity_type                        = optional(string)
+    identity_ids                         = optional(list(string), [])
+    boot_diagnostics_storage_account_uri = optional(string)
+    tags                                 = optional(map(string), {})
   }))
   default = null
 }
@@ -121,6 +121,12 @@ variable "key_vault_secrets" {
   description = "Map of Key Vault secret names to their resource IDs for Container Apps"
   type        = map(string)
   default     = {}
+}
+
+variable "container_app_identity_type" {
+  description = "Identity type for Container Apps when using Key Vault secrets (default: SystemAssigned)"
+  type        = string
+  default     = null
 }
 
 variable "tags" {

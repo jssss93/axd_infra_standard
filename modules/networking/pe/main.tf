@@ -14,10 +14,10 @@ resource "azurerm_private_dns_zone_virtual_network_link" "this" {
     for link in flatten([
       for zone_key, zone in var.private_dns_zones : [
         for idx, vnet_id in zone.virtual_network_ids : {
-          key           = "${zone_key}-${idx}"
-          zone_key      = zone_key
-          vnet_id       = vnet_id
-          link_name     = lookup(zone, "virtual_network_link_name", null)
+          key                  = "${zone_key}-${idx}"
+          zone_key             = zone_key
+          vnet_id              = vnet_id
+          link_name            = lookup(zone, "virtual_network_link_name", null)
           registration_enabled = lookup(zone, "registration_enabled", false)
         }
       ]

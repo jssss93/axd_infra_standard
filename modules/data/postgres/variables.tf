@@ -16,7 +16,7 @@ variable "location" {
 variable "server_version" {
   description = "The version of PostgreSQL to use"
   type        = string
-  default     = "14"
+  default     = null # null이면 루트 locals.defaults 사용
 }
 
 variable "administrator_login" {
@@ -33,19 +33,19 @@ variable "administrator_password" {
 variable "sku_name" {
   description = "The SKU Name for the PostgreSQL Flexible Server"
   type        = string
-  default     = "B_Standard_B1ms"
+  default     = null # null이면 루트 locals.defaults 사용
 }
 
 variable "storage_mb" {
   description = "The max storage allowed for the PostgreSQL Flexible Server"
   type        = number
-  default     = 32768
+  default     = null # null이면 루트 locals.defaults 사용
 }
 
 variable "backup_retention_days" {
   description = "Backup retention days for the server"
   type        = number
-  default     = 7
+  default     = null # null이면 루트 locals.defaults 사용
 }
 
 variable "geo_redundant_backup_enabled" {
@@ -55,9 +55,9 @@ variable "geo_redundant_backup_enabled" {
 }
 
 variable "public_network_access_enabled" {
-  description = "Is public network access enabled?"
+  description = "Is public network access enabled? (default: false for security)"
   type        = bool
-  default     = true
+  default     = null # null이면 루트 security_defaults 사용
 }
 
 variable "maintenance_window" {
@@ -101,12 +101,24 @@ variable "firewall_rules" {
   default = {}
 }
 
+variable "default_charset" {
+  description = "Default charset for PostgreSQL databases"
+  type        = string
+  default     = null # null이면 루트 locals.defaults 사용
+}
+
+variable "default_collation" {
+  description = "Default collation for PostgreSQL databases"
+  type        = string
+  default     = null # null이면 루트 locals.defaults 사용
+}
+
 variable "databases" {
   description = "Map of PostgreSQL databases"
   type = map(object({
     name      = string
-    charset   = optional(string, "UTF8")
-    collation = optional(string, "en_US.utf8")
+    charset   = optional(string)
+    collation = optional(string)
     tags      = optional(map(string), {})
   }))
   default = {}

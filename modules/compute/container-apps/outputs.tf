@@ -47,7 +47,7 @@ output "virtual_machine_names" {
 
 output "virtual_machine_private_ip_addresses" {
   description = "Map of Virtual Machine keys to their private IP addresses"
-  value = { for k, v in azurerm_network_interface.vm : k => v.ip_configuration[0].private_ip_address }
+  value       = { for k, v in azurerm_network_interface.vm : k => v.ip_configuration[0].private_ip_address }
 }
 
 output "virtual_machine_public_ip_addresses" {

@@ -1,10 +1,10 @@
 # Log Analytics Workspace (Container Apps Environment에 필요)
 resource "azurerm_log_analytics_workspace" "this" {
   count               = var.log_analytics_workspace_id == null ? 1 : 0
-  name                = var.log_analytics_workspace_name != null ? var.log_analytics_workspace_name : "${var.container_app_environment_name}-${var.log_analytics_workspace_suffix}"
+  name                = var.log_analytics_workspace_name != null ? var.log_analytics_workspace_name : "${var.container_app_environment_name}-${var.log_analytics_workspace_suffix != null ? var.log_analytics_workspace_suffix : "laws"}"
   location            = var.location
   resource_group_name = var.resource_group_name
-  sku                 = var.log_analytics_workspace_sku
+  sku                 = var.log_analytics_workspace_sku != null ? var.log_analytics_workspace_sku : "PerGB2018"
   retention_in_days   = var.log_analytics_retention_days
 
   tags = var.tags
@@ -39,35 +39,41 @@ resource "azurerm_container_app" "this" {
   name                         = each.value.name
   container_app_environment_id = azurerm_container_app_environment.this.id
   resource_group_name          = var.resource_group_name
-  revision_mode                = lookup(each.value, "revision_mode", "Single")
+  revision_mode                = lookup(each.value, "revision_mode", var.default_revision_mode != null ? var.default_revision_mode : "Single")
 
-  # Add SystemAssigned identity if Key Vault secrets are referenced
+  # Add identity if Key Vault secrets are referenced and this app uses secrets
   dynamic "identity" {
-    for_each = var.key_vault_id != null && length(var.key_vault_secrets) > 0 ? [1] : []
+    for_each = var.key_vault_id != null && length(lookup(each.value, "secrets", [])) > 0 ? [1] : []
     content {
-      type = "SystemAssigned"
+      type = var.container_app_identity_type != null ? var.container_app_identity_type : "SystemAssigned"
     }
   }
 
-  # Key Vault secrets reference
+  # Key Vault secrets reference - only include secrets used by this container app
+  # Filter var.key_vault_secrets to only include secrets referenced in each.value.secrets
   dynamic "secret" {
-    for_each = var.key_vault_id != null && length(var.key_vault_secrets) > 0 ? var.key_vault_secrets : {}
+    for_each = var.key_vault_id != null ? {
+      for secret_name, secret_id in var.key_vault_secrets : secret_name => secret_id
+      if secret_id != null && contains(toset([
+        for s in lookup(each.value, "secrets", []) : s.secret_name
+      ]), secret_name)
+    } : {}
     content {
       name                = secret.key
       key_vault_secret_id = secret.value
-      identity            = "system"  # Use "system" for SystemAssigned identity
+      identity            = var.container_app_identity_type == "UserAssigned" ? "user" : "system" # "system" for SystemAssigned, "user" for UserAssigned
     }
   }
 
   template {
-    min_replicas = lookup(each.value, "min_replicas", 0)
-    max_replicas = lookup(each.value, "max_replicas", 10)
+    min_replicas = lookup(each.value, "min_replicas", var.default_min_replicas != null ? var.default_min_replicas : 0)
+    max_replicas = lookup(each.value, "max_replicas", var.default_max_replicas != null ? var.default_max_replicas : 10)
 
     container {
-      name   = lookup(each.value, "container_name", null) != null ? each.value.container_name : each.key  # Container 블록의 name은 키를 사용 (또는 명시적으로 지정)
+      name   = lookup(each.value, "container_name", null) != null ? each.value.container_name : each.key # Container 블록의 name은 키를 사용 (또는 명시적으로 지정)
       image  = each.value.image
-      cpu    = lookup(each.value, "cpu", 0.25)
-      memory = lookup(each.value, "memory", "0.5Gi")
+      cpu    = lookup(each.value, "cpu", var.default_cpu != null ? var.default_cpu : 0.25)
+      memory = lookup(each.value, "memory", var.default_memory != null ? var.default_memory : "0.5Gi")
 
       dynamic "env" {
         for_each = lookup(each.value, "env_vars", {})
@@ -159,11 +165,11 @@ resource "azurerm_linux_virtual_machine" "this" {
     if lookup(v, "os_type", "Linux") == "Linux"
   }
 
-  name                = each.value.name
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  size                = each.value.size
-  admin_username      = each.value.admin_username
+  name                  = each.value.name
+  resource_group_name   = var.resource_group_name
+  location              = var.location
+  size                  = each.value.size
+  admin_username        = each.value.admin_username
   network_interface_ids = [azurerm_network_interface.vm[each.key].id]
 
   admin_ssh_key {
@@ -206,12 +212,12 @@ resource "azurerm_windows_virtual_machine" "this" {
     if lookup(v, "os_type", "Linux") == "Windows"
   }
 
-  name                = each.value.name
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  size                = each.value.size
-  admin_username      = each.value.admin_username
-  admin_password      = each.value.admin_password
+  name                  = each.value.name
+  resource_group_name   = var.resource_group_name
+  location              = var.location
+  size                  = each.value.size
+  admin_username        = each.value.admin_username
+  admin_password        = each.value.admin_password
   network_interface_ids = [azurerm_network_interface.vm[each.key].id]
 
   os_disk {

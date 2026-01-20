@@ -74,20 +74,20 @@ variable "application_gateway_subnet_id" {
 variable "application_gateway_config" {
   description = "Application Gateway 설정"
   type = object({
-    sku_name                    = optional(string, "Standard_v2")
-    sku_tier                    = optional(string, "Standard_v2")
-    capacity                    = optional(number, 2)
-    public_ip_enabled           = optional(bool, true)
-    public_ip_name              = optional(string)
-    public_ip_allocation_method  = optional(string, "Static")
-    public_ip_sku                = optional(string, "Standard")
-    private_ip_address          = optional(string)
+    sku_name                      = optional(string, "Standard_v2")
+    sku_tier                      = optional(string, "Standard_v2")
+    capacity                      = optional(number, 2)
+    public_ip_enabled             = optional(bool, true)
+    public_ip_name                = optional(string)
+    public_ip_allocation_method   = optional(string, "Static")
+    public_ip_sku                 = optional(string, "Standard")
+    private_ip_address            = optional(string)
     private_ip_address_allocation = optional(string, "Static")
-    auto_connect_container_apps  = optional(bool, true)
+    auto_connect_container_apps   = optional(bool, true)
     frontend_ports = optional(list(object({
       name = string
       port = number
-    })), [
+      })), [
       {
         name = "http"
         port = 80
@@ -170,9 +170,9 @@ variable "private_dns_zones" {
   description = "Map of Private DNS Zone configurations"
   type = map(object({
     name                      = string
-    virtual_network_ids        = list(string)
-    virtual_network_link_name  = optional(string)
-    registration_enabled       = optional(bool, false)
+    virtual_network_ids       = list(string)
+    virtual_network_link_name = optional(string)
+    registration_enabled      = optional(bool, false)
   }))
   default = {}
 }
@@ -180,15 +180,15 @@ variable "private_dns_zones" {
 variable "private_endpoints" {
   description = "Map of Private Endpoint configurations"
   type = map(object({
-    name                          = string
-    subnet_id                     = string
-    private_connection_resource_id = string
-    subresource_names              = list(string)
-    is_manual_connection           = optional(bool, false)
-    request_message                = optional(string)
+    name                            = string
+    subnet_id                       = string
+    private_connection_resource_id  = string
+    subresource_names               = list(string)
+    is_manual_connection            = optional(bool, false)
+    request_message                 = optional(string)
     private_service_connection_name = optional(string)
     private_dns_zone_key            = optional(string)
-    private_dns_zone_group_name    = optional(string)
+    private_dns_zone_group_name     = optional(string)
   }))
   default = {}
 }

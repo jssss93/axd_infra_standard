@@ -34,13 +34,13 @@ variable "log_analytics_workspace_name" {
 variable "log_analytics_workspace_suffix" {
   description = "Suffix for auto-generated Log Analytics Workspace name"
   type        = string
-  default     = "laws"
+  default     = null # null이면 루트 locals.defaults 사용
 }
 
 variable "log_analytics_workspace_sku" {
   description = "SKU for the Log Analytics Workspace"
   type        = string
-  default     = "PerGB2018"
+  default     = null # null이면 루트 locals.defaults 사용
 }
 
 variable "log_analytics_retention_days" {
@@ -49,16 +49,46 @@ variable "log_analytics_retention_days" {
   default     = 30
 }
 
+variable "default_revision_mode" {
+  description = "Default revision mode for Container Apps"
+  type        = string
+  default     = null # null이면 루트 locals.defaults 사용
+}
+
+variable "default_min_replicas" {
+  description = "Default minimum replicas for Container Apps"
+  type        = number
+  default     = null # null이면 루트 locals.defaults 사용
+}
+
+variable "default_max_replicas" {
+  description = "Default maximum replicas for Container Apps"
+  type        = number
+  default     = null # null이면 루트 locals.defaults 사용
+}
+
+variable "default_cpu" {
+  description = "Default CPU allocation for Container Apps"
+  type        = number
+  default     = null # null이면 루트 locals.defaults 사용
+}
+
+variable "default_memory" {
+  description = "Default memory allocation for Container Apps"
+  type        = string
+  default     = null # null이면 루트 locals.defaults 사용
+}
+
 variable "container_apps" {
   description = "Map of Container App configurations"
   type = map(object({
-    name          = optional(string)  # 명명규칙이 적용되면 자동 생성됨
+    name          = optional(string) # 명명규칙이 적용되면 자동 생성됨
     image         = string
-    cpu           = optional(number, 0.25)
-    memory        = optional(string, "0.5Gi")
-    min_replicas  = optional(number, 0)
-    max_replicas  = optional(number, 10)
-    revision_mode = optional(string, "Single")
+    cpu           = optional(number)
+    memory        = optional(string)
+    min_replicas  = optional(number)
+    max_replicas  = optional(number)
+    revision_mode = optional(string)
     env_vars      = optional(map(string), {})
     secrets = optional(list(object({
       name        = string
@@ -83,11 +113,11 @@ variable "virtual_machines" {
   type = map(object({
     name                          = string
     size                          = string
-    subnet_id                     = string  # Subnet ID
-    os_type                       = optional(string, "Linux")  # Linux or Windows
+    subnet_id                     = string                    # Subnet ID
+    os_type                       = optional(string, "Linux") # Linux or Windows
     admin_username                = string
-    admin_password                 = optional(string)  # Required for Windows
-    admin_ssh_key                 = optional(string)  # Required for Linux
+    admin_password                = optional(string) # Required for Windows
+    admin_ssh_key                 = optional(string) # Required for Linux
     private_ip_address            = optional(string)
     private_ip_address_allocation = optional(string, "Dynamic")
     public_ip_enabled             = optional(bool, false)
@@ -102,10 +132,10 @@ variable "virtual_machines" {
       sku       = string
       version   = optional(string, "latest")
     })
-    identity_type                          = optional(string)
-    identity_ids                           = optional(list(string), [])
-    boot_diagnostics_storage_account_uri    = optional(string)
-    tags                                    = optional(map(string), {})
+    identity_type                        = optional(string)
+    identity_ids                         = optional(list(string), [])
+    boot_diagnostics_storage_account_uri = optional(string)
+    tags                                 = optional(map(string), {})
   }))
   default = {}
 }
@@ -120,6 +150,12 @@ variable "key_vault_secrets" {
   description = "Map of Key Vault secret names to their resource IDs for Container Apps"
   type        = map(string)
   default     = {}
+}
+
+variable "container_app_identity_type" {
+  description = "Identity type for Container Apps when using Key Vault secrets (default: SystemAssigned)"
+  type        = string
+  default     = null # null이면 루트 locals.defaults 사용
 }
 
 variable "tags" {

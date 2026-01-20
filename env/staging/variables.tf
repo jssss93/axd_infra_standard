@@ -95,7 +95,7 @@ variable "container_apps_subnet_id" {
 variable "container_apps" {
   description = "Container App configurations"
   type = map(object({
-    name          = optional(string)  # 명명규칙이 적용되면 자동 생성됨
+    name          = optional(string) # 명명규칙이 적용되면 자동 생성됨
     image         = string
     cpu           = optional(number, 0.25)
     memory        = optional(string, "0.5Gi")

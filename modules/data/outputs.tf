@@ -103,5 +103,5 @@ output "postgresql_database_ids" {
 # Key Vault Secret IDs (created by afterjob module in root)
 output "key_vault_secret_ids" {
   description = "Map of Key Vault secret names to their resource IDs (created by afterjob module in root)"
-  value       = {}  # Empty, secrets are created by afterjob module in root
+  value       = {} # Empty, secrets are created by afterjob module in root
 }

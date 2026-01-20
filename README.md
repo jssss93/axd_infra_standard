@@ -173,14 +173,18 @@ Terraform은 리소스 간 의존성을 자동으로 감지하여 올바른 순�
 1. Resource Group (Foundation)
    ↓
 2. Networking Core (VNet + Subnets) ─┐
-   ↓                                  │ (병렬 배포 가능)
+   ↓                                 │ (병렬 배포 가능)
 3. Infrastructure Services (PaaS) ───┘
+   ├─ Data Services (Key Vault, ACR, Cosmos, PostgreSQL)
+   └─ AI Services (Foundry, OpenAI)
    ↓
-4. Compute (Container Apps + VMs)
+4. Afterjob (Key Vault Secrets 생성)
    ↓
-5. Application Gateway (Container Apps FQDN 자동 연결)
+5. Compute (Container Apps + VMs)
    ↓
-6. Private Endpoints (선택사항)
+6. Application Gateway (Container Apps FQDN 자동 연결)
+   ↓
+7. Private Endpoints (선택사항)
 ```
 
 ### 단계별 상세 설명
@@ -208,34 +212,62 @@ Terraform은 리소스 간 의존성을 자동으로 감지하여 올바른 순�
   - Route Table Associations
 
 #### 4단계: Infrastructure Services 생성 (병렬 가능)
-- **모듈**: `module.keyvault`, `module.acr`, `module.cosmos`, `module.postgres`, `module.foundry`, `module.openai`
+- **모듈**: `module.data` (Key Vault, ACR, Cosmos, PostgreSQL), `module.services` (Foundry, OpenAI)
 - **의존성**: `module.rg` (Resource Group)
 - **생성 시간**: 서비스별로 다름 (각 2-10분)
 - **생성 리소스** (활성화된 경우):
-  - Key Vault (다른 서비스보다 먼저 생성)
-  - Container Registry (ACR)
-  - Cosmos DB
-  - PostgreSQL
-  - AI Foundry
-  - OpenAI
+  - **Data Services** (`module.data`):
+    - Key Vault (다른 서비스보다 먼저 생성)
+    - Container Registry (ACR)
+    - Cosmos DB
+    - PostgreSQL
+  - **AI Services** (`module.services`, `depends_on = [module.data]`):
+    - AI Foundry Hub → Project → Cognitive Account → 모델 배포
+    - OpenAI Cognitive Account → 모델 배포
+
+**AI Foundry 배포 순서:**
+1. Storage Account 생성 (또는 기존 사용)
+2. Foundry Hub 생성
+3. Foundry Project 생성
+4. Project Cognitive Services Account 생성
+5. 모델 배포 (Project Account에 배포)
 
 이 단계는 Networking과 병렬로 배포될 수 있습니다.
 
-#### 5단계: Compute 리소스 생성
+#### 5단계: Key Vault Secrets 생성 (Afterjob)
+- **모듈**: `module.afterjob`
+- **의존성**: 
+  - `module.data` (모든 Data 서비스)
+  - `module.services` (모든 AI 서비스)
+- **생성 시간**: ~30초-1분
+- **생성 리소스**:
+  - Key Vault Secrets (모든 서비스의 연결 정보를 Key Vault에 저장)
+    - ACR: login-server, admin-username, admin-password
+    - Cosmos DB: endpoint, primary-key, secondary-key
+    - PostgreSQL: fqdn, admin-login, password
+    - Foundry: endpoint
+    - OpenAI: endpoint, primary-key, secondary-key
+
+**중요**: 이 단계는 모든 서비스가 생성된 후에 실행되며, Container Apps에서 사용할 Secret ID를 생성합니다.
+
+#### 6단계: Compute 리소스 생성
 - **모듈**: `module.compute`
 - **의존성**: 
   - `module.rg` (Resource Group)
   - `module.subnets` (Subnet ID)
-  - `module.keyvault` (Key Vault ID - 명시적 `depends_on`)
+  - `module.data` (Key Vault ID - 명시적 `depends_on`)
+  - `module.afterjob` (Key Vault Secret IDs - `key_vault_secrets` 변수)
 - **생성 시간**: ~5-10분
 - **생성 리소스**:
   - Log Analytics Workspace (없는 경우)
   - Container App Environment
-  - Container Apps (FQDN 자동 생성)
+  - Container Apps (FQDN 자동 생성, Key Vault Secrets 사용)
   - Virtual Machines (선택사항)
 
-#### 6단계: Application Gateway 생성
-- **모듈**: `module.application_gateway`
+**중요**: Container Apps는 `module.afterjob`에서 생성된 Key Vault Secret IDs를 사용하여 Secret을 참조합니다.
+
+#### 7단계: Application Gateway 생성
+- **모듈**: `module.networking` 내부의 `module.agw`
 - **의존성**: 
   - `module.subnets` (Subnet ID)
   - `module.compute` (Container Apps FQDN)
@@ -245,15 +277,15 @@ Terraform은 리소스 간 의존성을 자동으로 감지하여 올바른 순�
   - Application Gateway
   - Backend Pool에 Container Apps FQDN 자동 연결
 
-**참고**: Application Gateway는 Container Apps의 FQDN이 생성된 후에 배포됩니다.
+**참고**: Application Gateway는 Container Apps의 FQDN이 생성된 후에 배포됩니다. `module.networking` 내부에서 처리되지만, 실제 생성은 Compute 이후에 이루어집니다.
 
-#### 7단계: Private Endpoints 생성 (선택사항)
-- **모듈**: `module.networking_pe`
+#### 8단계: Private Endpoints 생성 (선택사항)
+- **모듈**: `module.networking` 내부의 `module.pe`
 - **의존성**: 
   - `module.rg` (Resource Group)
-  - `module.vnet` (VNet ID)
-  - `module.subnets` (Subnet ID)
-  - 각 PaaS 서비스 모듈 (리소스 ID - 명시적 `depends_on`)
+  - `module.networking` (VNet ID, Subnet ID)
+  - `module.data` (모든 Data 서비스 리소스 ID)
+  - `module.services` (모든 AI 서비스 리소스 ID)
 - **생성 시간**: ~5-10분
 - **생성 리소스** (활성화된 경우):
   - Private DNS Zones
@@ -267,9 +299,10 @@ Terraform은 리소스 간 의존성을 자동으로 감지하여 올바른 순�
 | 2단계 | Virtual Network | ~10초 |
 | 3단계 | Subnets | ~20초 |
 | 4단계 | Infrastructure Services (PaaS) | ~2-10분 (서비스별) |
-| 5단계 | Container Apps Environment + Apps | ~5-10분 |
-| 6단계 | Application Gateway | ~10-15분 |
-| 7단계 | Private Endpoints (선택사항) | ~5-10분 |
+| 5단계 | Key Vault Secrets (Afterjob) | ~30초-1분 |
+| 6단계 | Container Apps Environment + Apps | ~5-10분 |
+| 7단계 | Application Gateway | ~10-15분 |
+| 8단계 | Private Endpoints (선택사항) | ~5-10분 |
 | **전체** | **모든 리소스** | **~20-35분** |
 
 ### 배포 순서 확인 방법
@@ -297,16 +330,19 @@ terraform apply -target=module.vnet
 terraform apply -target=module.subnets
 
 # 4단계: Infrastructure Services만 생성
-terraform apply -target=module.keyvault -target=module.acr -target=module.cosmos -target=module.postgres -target=module.foundry -target=module.openai
+terraform apply -target=module.data -target=module.services
 
-# 5단계: Compute만 생성
+# 5단계: Key Vault Secrets만 생성
+terraform apply -target=module.afterjob
+
+# 6단계: Compute만 생성
 terraform apply -target=module.compute
 
-# 6단계: Application Gateway만 생성
-terraform apply -target=module.application_gateway[0]
+# 7단계: Application Gateway만 생성 (networking 모듈 내부)
+terraform apply -target=module.networking.module.agw
 
-# 7단계: Private Endpoints만 생성
-terraform apply -target=module.networking_pe[0]
+# 8단계: Private Endpoints만 생성 (networking 모듈 내부)
+terraform apply -target=module.networking.module.pe
 
 # 전체 배포
 terraform apply
@@ -315,10 +351,12 @@ terraform apply
 ### 주의사항
 
 1. **Container Apps FQDN 대기**: Application Gateway는 Container Apps의 FQDN이 생성된 후에 배포됩니다.
-2. **Key Vault 의존성**: Container Apps 모듈은 Key Vault가 생성된 후에 배포됩니다 (`depends_on = [module.keyvault]`).
-3. **Private Endpoints 의존성**: Private Endpoints는 PaaS 서비스들이 생성된 후에 배포됩니다 (`depends_on = [module.keyvault, module.acr, module.cosmos, module.postgres, module.foundry, module.openai]`).
-4. **Application Gateway 배포 시간**: Application Gateway는 가장 오래 걸리는 리소스입니다 (10-15분).
-5. **모듈 구조**: 모든 리소스는 루트 `main.tf`에서 개별 모듈로 직접 호출됩니다.
+2. **Key Vault Secrets 의존성**: Container Apps 모듈은 `module.afterjob`에서 생성된 Key Vault Secret IDs를 사용합니다. 따라서 Afterjob 모듈이 먼저 완료되어야 합니다.
+3. **Afterjob 모듈**: 모든 서비스(Data + AI Services)가 생성된 후에 Key Vault Secrets를 생성합니다. 이는 Container Apps에서 Secret을 참조하기 위해 필요합니다.
+4. **Private Endpoints 의존성**: Private Endpoints는 모든 PaaS 서비스들이 생성된 후에 배포됩니다.
+5. **Application Gateway 배포 시간**: Application Gateway는 가장 오래 걸리는 리소스입니다 (10-15분).
+6. **모듈 구조**: 모든 리소스는 루트 `main.tf`에서 개별 모듈로 직접 호출됩니다.
+7. **Secret 참조**: Container Apps에서 Key Vault Secret을 사용하는 경우, `secrets` 블록에 정의된 `secret_name`이 `module.afterjob.key_vault_secret_ids`의 키와 일치해야 합니다.
 
 ## 모듈 설명
 
@@ -500,6 +538,116 @@ AI 서비스 모듈들입니다. 각 서비스는 독립적으로 사용할 수 
 - `modules/services/foundry/`: AI Foundry
 - `modules/services/openai/`: OpenAI
 
+#### AI Foundry 모듈 (`modules/services/foundry/`)
+
+Azure AI Foundry Hub와 Project를 관리하고, Project 레벨에 Cognitive Services Account를 생성하여 모델을 배포합니다.
+
+**구조:**
+```
+Hub (azurerm_ai_foundry)
+ └─ Project-A (azurerm_ai_foundry_project)
+      └─ AOAI Account (azurerm_cognitive_account)
+           ├─ GPT-4.1 (azurerm_cognitive_deployment)
+           └─ GPT-4.1-mini (azurerm_cognitive_deployment)
+```
+
+**주요 특징:**
+- Hub 레벨에는 Cognitive Account를 생성하지 않음
+- Project 레벨에만 Cognitive Services Account 생성
+- 하나의 Account에 여러 모델 배포 가능
+- Storage Account 자동 생성 또는 기존 Storage Account 사용 가능
+
+**입력 변수:**
+- `name`: Foundry Hub 이름
+- `resource_group_name`: 리소스 그룹 이름
+- `location`: Azure 지역
+- `storage_account_id`: 기존 Storage Account ID (선택, null이면 자동 생성)
+- `storage_account_name`: Storage Account 이름 (선택)
+- `key_vault_id`: Key Vault ID (선택, 권장)
+- `create_project`: Project 생성 여부 (기본값: false)
+- `project_name`: Project 이름 (선택, 지정하지 않으면 `{name}-project`)
+- `deployments`: Hub 레벨 배포 설정 (현재 사용 안 함, 빈 객체)
+- `project_deployments`: Project 레벨 배포 설정 (필수, 모델 배포)
+- `cognitive_account_sku_name`: Cognitive Account SKU (기본값: "S0")
+- `public_network_access_enabled`: Public network access 활성화 여부 (기본값: false)
+- `identity_type`: Managed Identity 타입 (기본값: "SystemAssigned")
+
+**배포 설정 예시:**
+```hcl
+foundry_config = {
+  storage_account_id = null  # null이면 자동 생성
+  create_project = true
+  project_name = null  # 자동 생성: {foundry_name}-project
+  
+  # Hub 레벨 배포 (사용 안 함)
+  deployments = {}
+  
+  # Project 레벨 배포
+  project_deployments = {
+    "gpt-4.1" = {
+      name = "gpt-4.1"
+      model_name = "gpt-4.1"
+      model_format = "OpenAI"
+      version_upgrade_option = "OnceNewDefaultVersionAvailable"
+      scale = {
+        name = "GlobalStandard"
+        capacity = null
+      }
+    }
+    "gpt-4.1-mini" = {
+      name = "gpt-4.1-mini"
+      model_name = "gpt-4.1-mini"
+      model_format = "OpenAI"
+      version_upgrade_option = "OnceNewDefaultVersionAvailable"
+      scale = {
+        name = "GlobalStandard"
+        capacity = null
+      }
+    }
+  }
+  
+  identity_type = "SystemAssigned"
+}
+```
+
+**출력:**
+- `foundry_id`: Foundry Hub ID
+- `foundry_name`: Foundry Hub 이름
+- `foundry_endpoint`: Foundry Hub discovery URL
+- `project_id`: Project ID (생성된 경우)
+- `project_name`: Project 이름 (생성된 경우)
+- `cognitive_account_id`: Project Cognitive Account ID
+- `cognitive_account_name`: Project Cognitive Account 이름
+- `project_deployment_ids`: Project 배포 ID 맵
+- `project_deployment_names`: Project 배포 이름 맵
+- `storage_account_id`: Storage Account ID
+
+**주의사항:**
+- Azure OpenAI Service 접근 권한이 구독에 활성화되어 있어야 함
+- 모델 배포를 위한 quota가 필요함 (Azure Portal에서 확인 및 요청)
+- `gpt-4.1` 및 `gpt-4.1-mini` 모델은 구독에 quota가 할당되어 있어야 함
+- 자세한 내용은 [AZURE_OPENAI_SETUP.md](AZURE_OPENAI_SETUP.md) 참조
+
+#### OpenAI 모듈 (`modules/services/openai/`)
+
+독립적인 Azure OpenAI Cognitive Services Account를 생성하고 모델을 배포합니다.
+
+**입력 변수:**
+- `name`: OpenAI Account 이름
+- `resource_group_name`: 리소스 그룹 이름
+- `location`: Azure 지역
+- `sku_name`: SKU 이름 (기본값: "S0")
+- `deployments`: 모델 배포 설정 맵
+- `public_network_access_enabled`: Public network access 활성화 여부
+- `identity_type`: Managed Identity 타입
+- `key_vault_id`: Key Vault ID (선택)
+
+**출력:**
+- `cognitive_account_id`: Cognitive Account ID
+- `cognitive_account_name`: Cognitive Account 이름
+- `deployment_ids`: 배포 ID 맵
+- `deployment_names`: 배포 이름 맵
+
 ## 태그 관리
 
 이 프로젝트는 공통 태그를 자동으로 모든 리소스에 적용합니다:
@@ -535,8 +683,10 @@ AI 서비스 모듈들입니다. 각 서비스는 독립적으로 사용할 수 
 | Key Vault | `{프로젝트}-{환경}-{용도/기능}-kv-{순번}` | `tmp-dev-agent-kv-001` |
 | Cosmos DB | `{프로젝트}-{환경}-{용도/기능}-cosmos-{순번}` | `tmp-dev-agent-cosmos-001` |
 | PostgreSQL | `{프로젝트}-{환경}-{용도/기능}-pgsql-{순번}` | `tmp-dev-agent-pgsql-001` |
-| AI Foundry | `{프로젝트}-{환경}-{용도/기능}-foundry-{순번}` | `tmp-dev-agent-foundry-001` |
-| OpenAI | `{프로젝트}-{환경}-{용도/기능}-openai-{순번}` | `tmp-dev-agent-openai-001` |
+| AI Foundry Hub | `{프로젝트}-{환경}-{용도/기능}-aif` | `tmp-dev-agent-aif` |
+| AI Foundry Project | `{foundry_name}-project` | `tmp-dev-agent-aif-project` |
+| AI Foundry Cognitive Account | `{project_name}-cog` | `tmp-dev-agent-aif-project-cog` |
+| OpenAI | `{프로젝트}-{환경}-{용도/기능}-aoai-{순번}` | `tmp-dev-agent-aoai-001` |
 
 ### 네이밍 구성 요소
 

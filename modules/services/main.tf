@@ -4,23 +4,31 @@ module "foundry" {
 
   source = "./foundry"
 
-  name                = var.foundry_name
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  storage_account_id         = lookup(var.foundry_config, "storage_account_id", null)
-  storage_account_name       = lookup(var.foundry_config, "storage_account_name", null)
-  storage_account_tier       = lookup(var.foundry_config, "storage_account_tier", "Standard")
-  storage_account_replication_type = lookup(var.foundry_config, "storage_account_replication_type", "LRS")
-  storage_account_public_network_access_enabled = lookup(var.foundry_config, "storage_account_public_network_access_enabled", false)
-  key_vault_id               = var.key_vault_id
-  public_network_access_enabled = lookup(var.foundry_config, "public_network_access_enabled", false)
-  identity_type              = lookup(var.foundry_config, "identity_type", "SystemAssigned")
-  identity_ids               = lookup(var.foundry_config, "identity_ids", [])
-  create_project             = lookup(var.foundry_config, "create_project", false)
-  project_name               = lookup(var.foundry_config, "project_name", null)
-  project_identity_type      = lookup(var.foundry_config, "project_identity_type", null)
-  project_identity_ids       = lookup(var.foundry_config, "project_identity_ids", [])
-  deployments                = lookup(var.foundry_config, "deployments", {})
+  name                                          = var.foundry_name
+  resource_group_name                           = var.resource_group_name
+  location                                      = var.location
+  storage_account_id                            = lookup(var.foundry_config, "storage_account_id", null)
+  storage_account_name                          = lookup(var.foundry_config, "storage_account_name", null)
+  storage_account_tier                          = lookup(var.foundry_config, "storage_account_tier", null)
+  storage_account_replication_type              = lookup(var.foundry_config, "storage_account_replication_type", null)
+  storage_account_public_network_access_enabled = lookup(var.foundry_config, "storage_account_public_network_access_enabled", null)
+  storage_account_name_suffix                   = lookup(var.foundry_config, "storage_account_name_suffix", null)
+  key_vault_id                                  = var.key_vault_id
+  public_network_access_enabled                 = lookup(var.foundry_config, "public_network_access_enabled", null)
+  identity_type                                 = lookup(var.foundry_config, "identity_type", null)
+  identity_ids                                  = lookup(var.foundry_config, "identity_ids", [])
+  create_project                                = lookup(var.foundry_config, "create_project", false)
+  project_name                                  = lookup(var.foundry_config, "project_name", null)
+  project_identity_type                         = lookup(var.foundry_config, "project_identity_type", null)
+  project_identity_ids                          = lookup(var.foundry_config, "project_identity_ids", [])
+  deployments                                   = lookup(var.foundry_config, "deployments", {})
+  project_deployments                           = lookup(var.foundry_config, "project_deployments", {})
+  cognitive_account_sku_name                    = lookup(var.foundry_config, "cognitive_account_sku_name", null)
+  cognitive_account_kind                        = lookup(var.foundry_config, "cognitive_account_kind", null)
+  cognitive_account_name_suffix                 = lookup(var.foundry_config, "cognitive_account_name_suffix", null)
+  default_model_format                          = lookup(var.foundry_config, "default_model_format", null)
+  default_version_upgrade_option                = lookup(var.foundry_config, "default_version_upgrade_option", null)
+  default_deployment_sku_type                   = lookup(var.foundry_config, "default_deployment_sku_type", null)
 
   tags = var.tags
 
@@ -33,15 +41,19 @@ module "openai" {
 
   source = "./openai"
 
-  name                = var.openai_name
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  sku_name            = lookup(var.openai_config, "sku_name", "S0")
-  public_network_access_enabled = lookup(var.openai_config, "public_network_access_enabled", false)
-  identity_type                 = lookup(var.openai_config, "identity_type", "SystemAssigned")
-  identity_ids                  = lookup(var.openai_config, "identity_ids", [])
-  deployments                   = lookup(var.openai_config, "deployments", {})
-  key_vault_id                  = var.key_vault_id
+  name                           = var.openai_name
+  resource_group_name            = var.resource_group_name
+  location                       = var.location
+  sku_name                       = lookup(var.openai_config, "sku_name", null)
+  kind                           = lookup(var.openai_config, "kind", null)
+  public_network_access_enabled  = lookup(var.openai_config, "public_network_access_enabled", null)
+  identity_type                  = lookup(var.openai_config, "identity_type", null)
+  identity_ids                   = lookup(var.openai_config, "identity_ids", [])
+  deployments                    = lookup(var.openai_config, "deployments", {})
+  default_model_format           = lookup(var.openai_config, "default_model_format", null)
+  default_version_upgrade_option = lookup(var.openai_config, "default_version_upgrade_option", null)
+  default_deployment_sku_type    = lookup(var.openai_config, "default_deployment_sku_type", null)
+  key_vault_id                   = var.key_vault_id
 
   tags = var.tags
 }

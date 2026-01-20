@@ -5,7 +5,7 @@ resource "azurerm_container_registry" "this" {
   sku                 = var.sku
   admin_enabled       = var.admin_enabled
 
-  public_network_access_enabled = var.public_network_access_enabled
+  public_network_access_enabled = var.public_network_access_enabled != null ? var.public_network_access_enabled : false
 
   dynamic "georeplications" {
     for_each = var.georeplications != null ? var.georeplications : []

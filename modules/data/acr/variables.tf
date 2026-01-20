@@ -26,9 +26,9 @@ variable "admin_enabled" {
 }
 
 variable "public_network_access_enabled" {
-  description = "Whether public network access is allowed for the Container Registry"
+  description = "Whether public network access is allowed for the Container Registry (default: false for security)"
   type        = bool
-  default     = true
+  default     = null # null이면 루트 security_defaults 사용
 }
 
 variable "georeplications" {
@@ -79,7 +79,7 @@ variable "encryption" {
   description = "An encryption block"
   type = object({
     enabled            = bool
-    key_vault_key_id  = optional(string)
+    key_vault_key_id   = optional(string)
     identity_client_id = optional(string)
   })
   default = null

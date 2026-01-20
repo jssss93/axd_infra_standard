@@ -10,6 +10,12 @@ variable "key_vault_enabled" {
   default     = false
 }
 
+variable "create_secrets" {
+  description = "Whether to create Key Vault secrets (can be disabled when Key Vault is private endpoint only)"
+  type        = bool
+  default     = true
+}
+
 variable "tags" {
   description = "A map of tags to assign to the resources"
   type        = map(string)
@@ -134,4 +140,30 @@ variable "openai_secondary_key" {
   type        = string
   default     = null
   sensitive   = true
+}
+
+variable "secret_names" {
+  description = "Map of custom secret names (optional, overrides defaults)"
+  type = object({
+    acr_login_server       = optional(string)
+    acr_admin_username     = optional(string)
+    acr_admin_password     = optional(string)
+    cosmosdb_endpoint      = optional(string)
+    cosmosdb_primary_key   = optional(string)
+    cosmosdb_secondary_key = optional(string)
+    postgresql_password    = optional(string)
+    postgresql_fqdn        = optional(string)
+    postgresql_admin_login = optional(string)
+    foundry_endpoint       = optional(string)
+    openai_endpoint        = optional(string)
+    openai_primary_key     = optional(string)
+    openai_secondary_key   = optional(string)
+  })
+  default = null
+}
+
+variable "secret_content_type" {
+  description = "Content type for Key Vault secrets (default: text/plain)"
+  type        = string
+  default     = null
 }

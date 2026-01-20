@@ -49,9 +49,9 @@ variable "rbac_authorization_enabled" {
 }
 
 variable "public_network_access_enabled" {
-  description = "Whether public network access is allowed for this Key Vault"
+  description = "Whether public network access is allowed for this Key Vault (default: false for security)"
   type        = bool
-  default     = true
+  default     = null # null이면 루트 security_defaults 사용
 }
 
 variable "purge_protection_enabled" {
@@ -90,11 +90,11 @@ variable "contacts" {
 variable "access_policies" {
   description = "A map of access policies (only used when RBAC is disabled)"
   type = map(object({
-    object_id                = string
-    key_permissions          = optional(list(string), [])
-    secret_permissions       = optional(list(string), [])
-    certificate_permissions  = optional(list(string), [])
-    storage_permissions      = optional(list(string), [])
+    object_id               = string
+    key_permissions         = optional(list(string), [])
+    secret_permissions      = optional(list(string), [])
+    certificate_permissions = optional(list(string), [])
+    storage_permissions     = optional(list(string), [])
   }))
   default = {}
 }

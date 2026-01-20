@@ -49,38 +49,38 @@ module "infrastructure" {
   log_analytics_retention_days   = var.log_analytics_retention_days
 
   # Container Registry (선택)
-  container_registry_enabled   = var.container_registry_enabled
-  container_registry_name      = var.container_registry_name
-  container_registry_config    = var.container_registry_config
+  container_registry_enabled = var.container_registry_enabled
+  container_registry_name    = var.container_registry_name
+  container_registry_config  = var.container_registry_config
 
   # Key Vault (선택)
-  key_vault_enabled   = var.key_vault_enabled
-  key_vault_name      = var.key_vault_name
-  key_vault_config    = var.key_vault_config
+  key_vault_enabled = var.key_vault_enabled
+  key_vault_name    = var.key_vault_name
+  key_vault_config  = var.key_vault_config
 
   # Cosmos DB (선택)
-  cosmos_db_enabled   = var.cosmos_db_enabled
-  cosmos_db_name      = var.cosmos_db_name
-  cosmos_db_config    = var.cosmos_db_config
+  cosmos_db_enabled = var.cosmos_db_enabled
+  cosmos_db_name    = var.cosmos_db_name
+  cosmos_db_config  = var.cosmos_db_config
 
   # PostgreSQL (선택)
-  postgresql_enabled   = var.postgresql_enabled
-  postgresql_name      = var.postgresql_name
-  postgresql_config    = var.postgresql_config
+  postgresql_enabled = var.postgresql_enabled
+  postgresql_name    = var.postgresql_name
+  postgresql_config  = var.postgresql_config
 
   # AI Foundry (선택)
-  foundry_enabled   = var.foundry_enabled
-  foundry_name      = var.foundry_name
-  foundry_config    = var.foundry_config
+  foundry_enabled = var.foundry_enabled
+  foundry_name    = var.foundry_name
+  foundry_config  = var.foundry_config
 
   # OpenAI (선택)
-  openai_enabled   = var.openai_enabled
-  openai_name      = var.openai_name
-  openai_config    = var.openai_config
+  openai_enabled = var.openai_enabled
+  openai_name    = var.openai_name
+  openai_config  = var.openai_config
 
   # Private Endpoints (선택)
-  private_endpoints_enabled   = var.private_endpoints_enabled
-  private_endpoint_subnet_id  = var.private_endpoint_subnet_id
+  private_endpoints_enabled  = var.private_endpoints_enabled
+  private_endpoint_subnet_id = var.private_endpoint_subnet_id
 
   # Tags
   common_tags = merge(

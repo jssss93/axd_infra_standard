@@ -16,19 +16,19 @@ variable "location" {
 variable "offer_type" {
   description = "Specifies the Offer Type to use for this CosmosDB Account"
   type        = string
-  default     = "Standard"
+  default     = null # null이면 루트 locals.defaults 사용
 }
 
 variable "kind" {
   description = "Specifies the Kind of CosmosDB to create"
   type        = string
-  default     = "GlobalDocumentDB"
+  default     = null # null이면 루트 locals.defaults 사용
 }
 
 variable "consistency_level" {
   description = "The Consistency Level to use for this CosmosDB Account"
   type        = string
-  default     = "Session"
+  default     = null # null이면 루트 locals.defaults 사용
 }
 
 variable "max_interval_in_seconds" {
@@ -103,9 +103,9 @@ variable "ip_range_filter" {
 }
 
 variable "public_network_access_enabled" {
-  description = "Whether or not public network access is allowed for this CosmosDB account"
+  description = "Whether or not public network access is allowed for this CosmosDB account (default: false for security)"
   type        = bool
-  default     = true
+  default     = null # null이면 루트 security_defaults 사용
 }
 
 variable "enable_automatic_failover" {
@@ -144,11 +144,17 @@ variable "identity_ids" {
   default     = []
 }
 
+variable "default_indexing_mode" {
+  description = "Default indexing mode for Cosmos DB containers"
+  type        = string
+  default     = null # null이면 루트 locals.defaults 사용
+}
+
 variable "databases" {
   description = "Map of Cosmos DB SQL databases"
   type = map(object({
-    name         = string
-    throughput   = optional(number)
+    name       = string
+    throughput = optional(number)
     autoscale_settings = optional(object({
       max_throughput = number
     }))
@@ -160,17 +166,17 @@ variable "databases" {
 variable "containers" {
   description = "Map of Cosmos DB SQL containers"
   type = map(object({
-    name              = string
-    database_name     = string
+    name               = string
+    database_name      = string
     partition_key_path = string
-    throughput        = optional(number)
+    throughput         = optional(number)
     autoscale_settings = optional(object({
       max_throughput = number
     }))
     indexing_policy = optional(object({
-      indexing_mode  = optional(string, "consistent")
-      included_paths  = optional(list(string), [])
-      excluded_paths  = optional(list(string), [])
+      indexing_mode  = optional(string)
+      included_paths = optional(list(string), [])
+      excluded_paths = optional(list(string), [])
     }))
     unique_keys = optional(list(object({
       paths = list(string)

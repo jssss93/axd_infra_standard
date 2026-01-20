@@ -57,8 +57,8 @@ resource "azurerm_application_gateway" "this" {
   dynamic "backend_address_pool" {
     for_each = var.backend_address_pools
     content {
-      name         = backend_address_pool.value.name
-      fqdns        = length(lookup(backend_address_pool.value, "fqdns", [])) > 0 ? backend_address_pool.value.fqdns : (
+      name = backend_address_pool.value.name
+      fqdns = length(lookup(backend_address_pool.value, "fqdns", [])) > 0 ? backend_address_pool.value.fqdns : (
         var.auto_connect_container_apps && length(var.container_app_fqdns) > 0 ? values(var.container_app_fqdns) : lookup(backend_address_pool.value, "fqdns", [])
       )
       ip_addresses = lookup(backend_address_pool.value, "ip_addresses", null)

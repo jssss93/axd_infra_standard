@@ -100,7 +100,7 @@ variable "log_analytics_retention_days" {
 variable "container_apps" {
   description = "Map of Container App configurations. If name is not provided, it will be auto-generated using naming convention."
   type = map(object({
-    name          = optional(string)  # 명명규칙이 적용되면 자동 생성됨
+    name          = optional(string) # 명명규칙이 적용되면 자동 생성됨
     image         = string
     cpu           = optional(number, 0.25)
     memory        = optional(string, "0.5Gi")
@@ -131,11 +131,11 @@ variable "virtual_machines" {
   type = map(object({
     name                          = string
     size                          = string
-    subnet_id                     = string  # Subnet key name (e.g., "vm")
-    os_type                       = optional(string, "Linux")  # Linux or Windows
+    subnet_id                     = string                    # Subnet key name (e.g., "vm")
+    os_type                       = optional(string, "Linux") # Linux or Windows
     admin_username                = string
-    admin_password                 = optional(string)  # Required for Windows
-    admin_ssh_key                 = optional(string)  # Required for Linux
+    admin_password                = optional(string) # Required for Windows
+    admin_ssh_key                 = optional(string) # Required for Linux
     private_ip_address            = optional(string)
     private_ip_address_allocation = optional(string, "Dynamic")
     public_ip_enabled             = optional(bool, false)
@@ -150,10 +150,10 @@ variable "virtual_machines" {
       sku       = string
       version   = optional(string, "latest")
     })
-    identity_type                       = optional(string)
-    identity_ids                        = optional(list(string), [])
+    identity_type                        = optional(string)
+    identity_ids                         = optional(list(string), [])
     boot_diagnostics_storage_account_uri = optional(string)
-    tags                                = optional(map(string), {})
+    tags                                 = optional(map(string), {})
   }))
   default = null
 }
@@ -170,6 +170,15 @@ variable "tags" {
   description = "Additional tags to assign to all resources (will be merged with common_tags)"
   type        = map(string)
   default     = {}
+}
+
+variable "security_defaults" {
+  description = "Security default settings that can be overridden per service"
+  type = object({
+    public_network_access_enabled = optional(bool, false)
+    local_authentication_disabled = optional(bool, false)
+  })
+  default = null
 }
 
 # 네이밍 규칙 변수
@@ -231,16 +240,16 @@ variable "application_gateway_subnet_id" {
 variable "application_gateway_config" {
   description = "Application Gateway 설정"
   type = object({
-    sku_name                    = optional(string, "Standard_v2")
-    sku_tier                    = optional(string, "Standard_v2")
-    capacity                    = optional(number, 2)
-    public_ip_enabled           = optional(bool, true)
-    public_ip_name              = optional(string)
-    public_ip_allocation_method  = optional(string, "Static")
-    public_ip_sku                = optional(string, "Standard")
-    private_ip_address          = optional(string)
+    sku_name                      = optional(string, "Standard_v2")
+    sku_tier                      = optional(string, "Standard_v2")
+    capacity                      = optional(number, 2)
+    public_ip_enabled             = optional(bool, true)
+    public_ip_name                = optional(string)
+    public_ip_allocation_method   = optional(string, "Static")
+    public_ip_sku                 = optional(string, "Standard")
+    private_ip_address            = optional(string)
     private_ip_address_allocation = optional(string, "Static")
-    auto_connect_container_apps  = optional(bool, true)  # Container Apps FQDN 자동 연결 여부
+    auto_connect_container_apps   = optional(bool, true) # Container Apps FQDN 자동 연결 여부
     frontend_ports = optional(list(object({
       name = string
       port = number
@@ -282,7 +291,7 @@ variable "application_gateway_config" {
       name                        = string
       rule_type                   = string
       http_listener_name          = string
-      priority                    = optional(number)  # 1-20000 사이의 값
+      priority                    = optional(number) # 1-20000 사이의 값
       backend_address_pool_name   = optional(string)
       backend_http_settings_name  = optional(string)
       redirect_configuration_name = optional(string)
@@ -326,9 +335,9 @@ variable "container_registry_name" {
 variable "container_registry_config" {
   description = "Container Registry 설정"
   type = object({
-    sku                        = optional(string, "Basic")
-    admin_enabled              = optional(bool, false)
-    public_network_access_enabled = optional(bool, true)
+    sku                           = optional(string, "Basic")
+    admin_enabled                 = optional(bool, false)
+    public_network_access_enabled = optional(bool, null)
     georeplications = optional(list(object({
       location                  = string
       regional_endpoint_enabled = optional(bool, true)
@@ -380,15 +389,15 @@ variable "key_vault_name" {
 variable "key_vault_config" {
   description = "Key Vault 설정"
   type = object({
-    tenant_id                      = optional(string)
-    sku_name                       = optional(string, "standard")
-    enabled_for_deployment        = optional(bool, false)
-    enabled_for_disk_encryption    = optional(bool, false)
+    tenant_id                       = optional(string)
+    sku_name                        = optional(string, "standard")
+    enabled_for_deployment          = optional(bool, false)
+    enabled_for_disk_encryption     = optional(bool, false)
     enabled_for_template_deployment = optional(bool, false)
-    rbac_authorization_enabled     = optional(bool, true)
-    public_network_access_enabled  = optional(bool, true)
-    purge_protection_enabled       = optional(bool, false)
-    soft_delete_retention_days     = optional(number, 90)
+    rbac_authorization_enabled      = optional(bool, true)
+    public_network_access_enabled   = optional(bool, null)
+    purge_protection_enabled        = optional(bool, false)
+    soft_delete_retention_days      = optional(number, 90)
     network_acls = optional(object({
       default_action             = string
       bypass                     = optional(string, "AzureServices")
@@ -427,12 +436,12 @@ variable "cosmos_db_name" {
 variable "cosmos_db_config" {
   description = "Cosmos DB 설정"
   type = object({
-    offer_type                      = optional(string, "Standard")
-    kind                            = optional(string, "GlobalDocumentDB")
-    consistency_level               = optional(string, "Session")
-    max_interval_in_seconds         = optional(number, 5)
-    max_staleness_prefix           = optional(number, 100)
-    capabilities                    = optional(list(string), null)
+    offer_type              = optional(string, null)
+    kind                    = optional(string, null)
+    consistency_level       = optional(string, null)
+    max_interval_in_seconds = optional(number, 5)
+    max_staleness_prefix    = optional(number, 100)
+    capabilities            = optional(list(string), null)
     geo_locations = list(object({
       location          = string
       failover_priority = number
@@ -456,40 +465,41 @@ variable "cosmos_db_config" {
       id                                   = string
       ignore_missing_vnet_service_endpoint = optional(bool, false)
     })), [])
-    ip_range_filter                   = optional(string, null)
-    public_network_access_enabled     = optional(bool, true)
-    enable_automatic_failover         = optional(bool, false)
-    enable_multiple_write_locations  = optional(bool, false)
+    ip_range_filter                    = optional(string, null)
+    public_network_access_enabled      = optional(bool, null)
+    enable_automatic_failover          = optional(bool, false)
+    enable_multiple_write_locations    = optional(bool, false)
     access_key_metadata_writes_enabled = optional(bool, true)
-    local_authentication_disabled     = optional(bool, false)
-    identity_type                     = optional(string, null)
-    identity_ids                      = optional(list(string), [])
+    local_authentication_disabled      = optional(bool, false)
+    identity_type                      = optional(string, null)
+    identity_ids                       = optional(list(string), [])
     databases = optional(map(object({
-      name         = string
-      throughput   = optional(number)
+      name       = string
+      throughput = optional(number)
       autoscale_settings = optional(object({
         max_throughput = number
       }))
       tags = optional(map(string), {})
     })), {})
     containers = optional(map(object({
-      name              = string
-      database_name     = string
+      name               = string
+      database_name      = string
       partition_key_path = string
-      throughput        = optional(number)
+      throughput         = optional(number)
       autoscale_settings = optional(object({
         max_throughput = number
       }))
       indexing_policy = optional(object({
-        indexing_mode  = optional(string, "consistent")
-        included_paths  = optional(list(string), [])
-        excluded_paths  = optional(list(string), [])
+        indexing_mode  = optional(string)
+        included_paths = optional(list(string), [])
+        excluded_paths = optional(list(string), [])
       }))
       unique_keys = optional(list(object({
         paths = list(string)
       })), [])
       tags = optional(map(string), {})
     })), {})
+    default_indexing_mode = optional(string, null)
   })
   default = null
 }
@@ -510,14 +520,14 @@ variable "postgresql_name" {
 variable "postgresql_config" {
   description = "PostgreSQL 설정"
   type = object({
-    server_version      = optional(string, "14")
-    administrator_login    = string
-    administrator_password  = string
-    sku_name             = optional(string, "B_Standard_B1ms")
-    storage_mb           = optional(number, 32768)
-    backup_retention_days = optional(number, 7)
-    geo_redundant_backup_enabled = optional(bool, false)
-    public_network_access_enabled = optional(bool, true)
+    server_version                = optional(string, null)
+    administrator_login           = string
+    administrator_password        = string
+    sku_name                      = optional(string, null)
+    storage_mb                    = optional(number, null)
+    backup_retention_days         = optional(number, null)
+    geo_redundant_backup_enabled  = optional(bool, false)
+    public_network_access_enabled = optional(bool, null)
     maintenance_window = optional(object({
       day_of_week  = number
       start_hour   = number
@@ -527,8 +537,8 @@ variable "postgresql_config" {
       mode                      = string
       standby_availability_zone = optional(string)
     }), null)
-    identity_type        = optional(string, null)
-    identity_ids         = optional(list(string), [])
+    identity_type = optional(string, null)
+    identity_ids  = optional(list(string), [])
     firewall_rules = optional(map(object({
       name             = string
       start_ip_address = string
@@ -536,10 +546,12 @@ variable "postgresql_config" {
     })), {})
     databases = optional(map(object({
       name      = string
-      charset   = optional(string, "UTF8")
-      collation = optional(string, "en_US.utf8")
+      charset   = optional(string)
+      collation = optional(string)
       tags      = optional(map(string), {})
     })), {})
+    default_charset       = optional(string, null)
+    default_collation     = optional(string, null)
     server_configurations = optional(map(string), {})
   })
   default = null
@@ -561,13 +573,57 @@ variable "foundry_name" {
 variable "foundry_config" {
   description = "AI Foundry 설정"
   type = object({
-    create_cognitive_account     = optional(bool, true)
-    cognitive_account_kind       = optional(string, "OpenAI")
-    cognitive_account_sku        = optional(string, "S0")
-    public_network_access_enabled = optional(bool, true)
-    identity_type                = optional(string, null)
-    identity_ids                 = optional(list(string), [])
-    foundry_services             = optional(map(any), null)
+    storage_account_id                            = optional(string, null)
+    storage_account_name                          = optional(string, null)
+    storage_account_tier                          = optional(string, null)
+    storage_account_replication_type              = optional(string, null)
+    storage_account_public_network_access_enabled = optional(bool, null)
+    storage_account_name_suffix                   = optional(string, null)
+    public_network_access_enabled                 = optional(bool, null)
+    identity_type                                 = optional(string, null)
+    identity_ids                                  = optional(list(string), [])
+    create_project                                = optional(bool, false)
+    project_name                                  = optional(string, null)
+    project_identity_type                         = optional(string, null)
+    project_identity_ids                          = optional(list(string), [])
+    deployments = optional(map(object({
+      name                   = string
+      model_name             = string
+      model_format           = optional(string)
+      model_version          = optional(string)
+      rai_policy_name        = optional(string)
+      version_upgrade_option = optional(string)
+      scale = object({
+        name     = optional(string)
+        type     = optional(string)
+        capacity = optional(number)
+        family   = optional(string)
+        size     = optional(string)
+        tier     = optional(string)
+      })
+    })), {})
+    project_deployments = optional(map(object({
+      name                   = string
+      model_name             = string
+      model_format           = optional(string)
+      model_version          = optional(string)
+      rai_policy_name        = optional(string)
+      version_upgrade_option = optional(string)
+      scale = object({
+        name     = optional(string)
+        type     = optional(string)
+        capacity = optional(number)
+        family   = optional(string)
+        size     = optional(string)
+        tier     = optional(string)
+      })
+    })), {})
+    cognitive_account_sku_name     = optional(string, null)
+    cognitive_account_kind         = optional(string, null)
+    cognitive_account_name_suffix  = optional(string, null)
+    default_model_format           = optional(string, null)
+    default_version_upgrade_option = optional(string, null)
+    default_deployment_sku_type    = optional(string, null)
   })
   default = null
 }
@@ -588,25 +644,29 @@ variable "openai_name" {
 variable "openai_config" {
   description = "OpenAI 설정"
   type = object({
-    sku_name                    = optional(string, "S0")
-    public_network_access_enabled = optional(bool, true)
-    identity_type               = optional(string, null)
-    identity_ids                = optional(list(string), [])
+    sku_name                      = optional(string, null)
+    kind                          = optional(string, null)
+    public_network_access_enabled = optional(bool, null)
+    identity_type                 = optional(string, null)
+    identity_ids                  = optional(list(string), [])
     deployments = optional(map(object({
-      name                 = string
-      model_name           = string
-      model_format         = optional(string, "OpenAI")
-      model_version        = optional(string)
-      rai_policy_name      = optional(string)
-      version_upgrade_option = optional(string, "AutoUpgrade")
+      name                   = string
+      model_name             = string
+      model_format           = optional(string)
+      model_version          = optional(string)
+      rai_policy_name        = optional(string)
+      version_upgrade_option = optional(string)
       scale = object({
-        type     = optional(string, "Standard")
+        type     = optional(string)
         capacity = optional(number)
         family   = optional(string)
         size     = optional(string)
         tier     = optional(string)
       })
     })), {})
+    default_model_format           = optional(string, null)
+    default_version_upgrade_option = optional(string, null)
+    default_deployment_sku_type    = optional(string, null)
   })
   default = null
 }

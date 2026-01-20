@@ -30,15 +30,15 @@ variable "key_vault_name" {
 variable "key_vault_config" {
   description = "Key Vault configuration"
   type = object({
-    tenant_id                      = optional(string)
-    sku_name                       = optional(string, "standard")
-    enabled_for_deployment        = optional(bool, false)
-    enabled_for_disk_encryption    = optional(bool, false)
+    tenant_id                       = optional(string)
+    sku_name                        = optional(string, "standard")
+    enabled_for_deployment          = optional(bool, false)
+    enabled_for_disk_encryption     = optional(bool, false)
     enabled_for_template_deployment = optional(bool, false)
-    rbac_authorization_enabled     = optional(bool, true)
-    public_network_access_enabled  = optional(bool, true)
-    purge_protection_enabled       = optional(bool, false)
-    soft_delete_retention_days     = optional(number, 90)
+    rbac_authorization_enabled      = optional(bool, true)
+    public_network_access_enabled   = optional(bool, null)
+    purge_protection_enabled        = optional(bool, false)
+    soft_delete_retention_days      = optional(number, 90)
     network_acls = optional(object({
       default_action             = string
       bypass                     = optional(string, "AzureServices")
@@ -77,9 +77,9 @@ variable "container_registry_name" {
 variable "container_registry_config" {
   description = "Container Registry configuration"
   type = object({
-    sku                        = optional(string, "Basic")
-    admin_enabled              = optional(bool, false)
-    public_network_access_enabled = optional(bool, true)
+    sku                           = optional(string, "Basic")
+    admin_enabled                 = optional(bool, false)
+    public_network_access_enabled = optional(bool, null)
     georeplications = optional(list(object({
       location                  = string
       regional_endpoint_enabled = optional(bool, true)
@@ -131,12 +131,12 @@ variable "cosmos_db_name" {
 variable "cosmos_db_config" {
   description = "Cosmos DB configuration"
   type = object({
-    offer_type                      = optional(string, "Standard")
-    kind                            = optional(string, "GlobalDocumentDB")
-    consistency_level               = optional(string, "Session")
-    max_interval_in_seconds         = optional(number, 5)
-    max_staleness_prefix           = optional(number, 100)
-    capabilities                    = optional(list(string), null)
+    offer_type              = optional(string, null)
+    kind                    = optional(string, null)
+    consistency_level       = optional(string, null)
+    max_interval_in_seconds = optional(number, 5)
+    max_staleness_prefix    = optional(number, 100)
+    capabilities            = optional(list(string), null)
     geo_locations = list(object({
       location          = string
       failover_priority = number
@@ -160,34 +160,34 @@ variable "cosmos_db_config" {
       id                                   = string
       ignore_missing_vnet_service_endpoint = optional(bool, false)
     })), [])
-    ip_range_filter                   = optional(string, null)
-    public_network_access_enabled     = optional(bool, true)
-    enable_automatic_failover         = optional(bool, false)
-    enable_multiple_write_locations  = optional(bool, false)
+    ip_range_filter                    = optional(string, null)
+    public_network_access_enabled      = optional(bool, null)
+    enable_automatic_failover          = optional(bool, false)
+    enable_multiple_write_locations    = optional(bool, false)
     access_key_metadata_writes_enabled = optional(bool, true)
-    local_authentication_disabled     = optional(bool, false)
-    identity_type                     = optional(string, null)
-    identity_ids                      = optional(list(string), [])
+    local_authentication_disabled      = optional(bool, false)
+    identity_type                      = optional(string, null)
+    identity_ids                       = optional(list(string), [])
     databases = optional(map(object({
-      name         = string
-      throughput   = optional(number)
+      name       = string
+      throughput = optional(number)
       autoscale_settings = optional(object({
         max_throughput = number
       }))
       tags = optional(map(string), {})
     })), {})
     containers = optional(map(object({
-      name              = string
-      database_name     = string
+      name               = string
+      database_name      = string
       partition_key_path = string
-      throughput        = optional(number)
+      throughput         = optional(number)
       autoscale_settings = optional(object({
         max_throughput = number
       }))
       indexing_policy = optional(object({
-        indexing_mode  = optional(string, "consistent")
-        included_paths  = optional(list(string), [])
-        excluded_paths  = optional(list(string), [])
+        indexing_mode  = optional(string)
+        included_paths = optional(list(string), [])
+        excluded_paths = optional(list(string), [])
       }))
       unique_keys = optional(list(object({
         paths = list(string)
@@ -214,14 +214,14 @@ variable "postgresql_name" {
 variable "postgresql_config" {
   description = "PostgreSQL configuration"
   type = object({
-    server_version      = optional(string, "14")
-    administrator_login    = string
-    administrator_password  = string
-    sku_name             = optional(string, "B_Standard_B1ms")
-    storage_mb           = optional(number, 32768)
-    backup_retention_days = optional(number, 7)
-    geo_redundant_backup_enabled = optional(bool, false)
-    public_network_access_enabled = optional(bool, true)
+    server_version                = optional(string, null)
+    administrator_login           = string
+    administrator_password        = string
+    sku_name                      = optional(string, null)
+    storage_mb                    = optional(number, null)
+    backup_retention_days         = optional(number, null)
+    geo_redundant_backup_enabled  = optional(bool, false)
+    public_network_access_enabled = optional(bool, null)
     maintenance_window = optional(object({
       day_of_week  = number
       start_hour   = number
@@ -231,8 +231,8 @@ variable "postgresql_config" {
       mode                      = string
       standby_availability_zone = optional(string)
     }), null)
-    identity_type        = optional(string, null)
-    identity_ids         = optional(list(string), [])
+    identity_type = optional(string, null)
+    identity_ids  = optional(list(string), [])
     firewall_rules = optional(map(object({
       name             = string
       start_ip_address = string
@@ -240,10 +240,12 @@ variable "postgresql_config" {
     })), {})
     databases = optional(map(object({
       name      = string
-      charset   = optional(string, "UTF8")
-      collation = optional(string, "en_US.utf8")
+      charset   = optional(string)
+      collation = optional(string)
       tags      = optional(map(string), {})
     })), {})
+    default_charset       = optional(string, null)
+    default_collation     = optional(string, null)
     server_configurations = optional(map(string), {})
   })
   default = null

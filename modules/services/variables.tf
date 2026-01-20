@@ -36,34 +36,57 @@ variable "foundry_name" {
 variable "foundry_config" {
   description = "AI Foundry configuration"
   type = object({
-    storage_account_id         = optional(string, null)
-    storage_account_name       = optional(string, null)
-    storage_account_tier       = optional(string, "Standard")
-    storage_account_replication_type = optional(string, "LRS")
-    storage_account_public_network_access_enabled = optional(bool, false)
-    public_network_access_enabled = optional(bool, false)
-    identity_type              = optional(string, "SystemAssigned")
-    identity_ids               = optional(list(string), [])
-    create_project             = optional(bool, false)
-    project_name               = optional(string, null)
-    project_identity_type      = optional(string, null)
-    project_identity_ids       = optional(list(string), [])
+    storage_account_id                            = optional(string, null)
+    storage_account_name                          = optional(string, null)
+    storage_account_tier                          = optional(string, null)
+    storage_account_replication_type              = optional(string, null)
+    storage_account_public_network_access_enabled = optional(bool, null)
+    storage_account_name_suffix                   = optional(string, null)
+    public_network_access_enabled                 = optional(bool, null)
+    identity_type                                 = optional(string, null)
+    identity_ids                                  = optional(list(string), [])
+    create_project                                = optional(bool, false)
+    project_name                                  = optional(string, null)
+    project_identity_type                         = optional(string, null)
+    project_identity_ids                          = optional(list(string), [])
     deployments = optional(map(object({
-      name                 = string
-      model_name           = string
-      model_format         = optional(string, "OpenAI")
-      model_version        = optional(string)
-      rai_policy_name      = optional(string)
-      version_upgrade_option = optional(string, "AutoUpgrade")
+      name                   = string
+      model_name             = string
+      model_format           = optional(string)
+      model_version          = optional(string)
+      rai_policy_name        = optional(string)
+      version_upgrade_option = optional(string)
       scale = object({
         name     = optional(string)
-        type     = optional(string, "Standard")
+        type     = optional(string)
         capacity = optional(number)
         family   = optional(string)
         size     = optional(string)
         tier     = optional(string)
       })
     })), {})
+    project_deployments = optional(map(object({
+      name                   = string
+      model_name             = string
+      model_format           = optional(string)
+      model_version          = optional(string)
+      rai_policy_name        = optional(string)
+      version_upgrade_option = optional(string)
+      scale = object({
+        name     = optional(string)
+        type     = optional(string)
+        capacity = optional(number)
+        family   = optional(string)
+        size     = optional(string)
+        tier     = optional(string)
+      })
+    })), {})
+    cognitive_account_sku_name     = optional(string, null)
+    cognitive_account_kind         = optional(string, null)
+    cognitive_account_name_suffix  = optional(string, null)
+    default_model_format           = optional(string, null)
+    default_version_upgrade_option = optional(string, null)
+    default_deployment_sku_type    = optional(string, null)
   })
   default = null
 }
@@ -84,25 +107,29 @@ variable "openai_name" {
 variable "openai_config" {
   description = "OpenAI configuration"
   type = object({
-    sku_name                    = optional(string, "S0")
-    public_network_access_enabled = optional(bool, true)
-    identity_type               = optional(string, null)
-    identity_ids                = optional(list(string), [])
+    sku_name                      = optional(string, null)
+    kind                          = optional(string, null)
+    public_network_access_enabled = optional(bool, null)
+    identity_type                 = optional(string, null)
+    identity_ids                  = optional(list(string), [])
     deployments = optional(map(object({
-      name                 = string
-      model_name           = string
-      model_format         = optional(string, "OpenAI")
-      model_version        = optional(string)
-      rai_policy_name      = optional(string)
-      version_upgrade_option = optional(string, "AutoUpgrade")
+      name                   = string
+      model_name             = string
+      model_format           = optional(string)
+      model_version          = optional(string)
+      rai_policy_name        = optional(string)
+      version_upgrade_option = optional(string)
       scale = object({
-        type     = optional(string, "Standard")
+        type     = optional(string)
         capacity = optional(number)
         family   = optional(string)
         size     = optional(string)
         tier     = optional(string)
       })
     })), {})
+    default_model_format           = optional(string, null)
+    default_version_upgrade_option = optional(string, null)
+    default_deployment_sku_type    = optional(string, null)
   })
   default = null
 }

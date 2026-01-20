@@ -12,11 +12,12 @@ module "container_apps" {
   log_analytics_workspace_sku    = var.log_analytics_workspace_sku
   log_analytics_retention_days   = var.log_analytics_retention_days
   container_apps                 = var.container_apps
-  virtual_machines                = var.virtual_machines
-  
+  virtual_machines               = var.virtual_machines
+
   # Key Vault integration
-  key_vault_id      = var.key_vault_id
-  key_vault_secrets = var.key_vault_secrets
-  
+  key_vault_id                = var.key_vault_id
+  key_vault_secrets           = var.key_vault_secrets
+  container_app_identity_type = var.container_app_identity_type
+
   tags = var.tags
 }

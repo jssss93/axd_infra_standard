@@ -28,19 +28,25 @@ variable "storage_account_name" {
 variable "storage_account_tier" {
   description = "The tier of the Storage Account"
   type        = string
-  default     = "Standard"
+  default     = null # null이면 루트 locals.defaults 사용
 }
 
 variable "storage_account_replication_type" {
   description = "The replication type of the Storage Account"
   type        = string
-  default     = "LRS"
+  default     = null # null이면 루트 locals.defaults 사용
 }
 
 variable "storage_account_public_network_access_enabled" {
-  description = "Whether public network access is enabled for the Storage Account"
+  description = "Whether public network access is enabled for the Storage Account (default: false for security)"
   type        = bool
-  default     = false
+  default     = null # null이면 루트 security_defaults 사용
+}
+
+variable "storage_account_name_suffix" {
+  description = "Suffix for Storage Account name (default: 'sa')"
+  type        = string
+  default     = null
 }
 
 variable "key_vault_id" {
@@ -50,15 +56,33 @@ variable "key_vault_id" {
 }
 
 variable "public_network_access_enabled" {
-  description = "Whether public network access is enabled for the Foundry hub"
+  description = "Whether public network access is enabled for the Foundry hub and Cognitive Services Account (default: false for security)"
   type        = bool
-  default     = false
+  default     = null # null이면 루트 security_defaults 사용
+}
+
+variable "cognitive_account_sku_name" {
+  description = "The SKU name for the Cognitive Services Account (used for model deployments)"
+  type        = string
+  default     = null # null이면 루트 locals.defaults 사용
+}
+
+variable "cognitive_account_kind" {
+  description = "The kind of Cognitive Services Account (default: OpenAI)"
+  type        = string
+  default     = null # null이면 루트 locals.defaults 사용
+}
+
+variable "cognitive_account_name_suffix" {
+  description = "Suffix for Cognitive Account name (default: 'cog')"
+  type        = string
+  default     = null
 }
 
 variable "identity_type" {
   description = "The type of Managed Identity which should be assigned to the Foundry hub"
   type        = string
-  default     = "SystemAssigned"
+  default     = null # null이면 루트 locals.defaults 사용
 }
 
 variable "identity_ids" {
@@ -91,18 +115,57 @@ variable "project_identity_ids" {
   default     = []
 }
 
+variable "default_model_format" {
+  description = "Default model format for deployments"
+  type        = string
+  default     = null # null이면 "OpenAI" 사용
+}
+
+variable "default_version_upgrade_option" {
+  description = "Default version upgrade option for deployments"
+  type        = string
+  default     = null # null이면 "OnceNewDefaultVersionAvailable" 사용
+}
+
+variable "default_deployment_sku_type" {
+  description = "Default SKU type for deployments"
+  type        = string
+  default     = null # null이면 "Standard" 사용
+}
+
 variable "deployments" {
-  description = "Map of OpenAI deployments to create within the Foundry project"
+  description = "Map of OpenAI deployments to create within the Foundry Hub (Cognitive Services Account)"
   type = map(object({
-    name                 = string
-    model_name           = string
-    model_format         = optional(string, "OpenAI")
-    model_version        = optional(string)
-    rai_policy_name      = optional(string)
-    version_upgrade_option = optional(string, "AutoUpgrade")
+    name                   = string
+    model_name             = string
+    model_format           = optional(string)
+    model_version          = optional(string)
+    rai_policy_name        = optional(string)
+    version_upgrade_option = optional(string)
     scale = object({
       name     = optional(string)
-      type     = optional(string, "Standard")
+      type     = optional(string)
+      capacity = optional(number)
+      family   = optional(string)
+      size     = optional(string)
+      tier     = optional(string)
+    })
+  }))
+  default = {}
+}
+
+variable "project_deployments" {
+  description = "Map of OpenAI deployments to create within the Foundry Project (separate Cognitive Services Account)"
+  type = map(object({
+    name                   = string
+    model_name             = string
+    model_format           = optional(string)
+    model_version          = optional(string)
+    rai_policy_name        = optional(string)
+    version_upgrade_option = optional(string)
+    scale = object({
+      name     = optional(string)
+      type     = optional(string)
       capacity = optional(number)
       family   = optional(string)
       size     = optional(string)

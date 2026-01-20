@@ -2,17 +2,17 @@ resource "azurerm_postgresql_flexible_server" "this" {
   name                   = var.name
   resource_group_name    = var.resource_group_name
   location               = var.location
-  version                = var.server_version
+  version                = var.server_version != null ? var.server_version : "14"
   administrator_login    = var.administrator_login
   administrator_password = var.administrator_password
 
-  sku_name   = var.sku_name
-  storage_mb  = var.storage_mb
-  backup_retention_days = var.backup_retention_days
+  sku_name              = var.sku_name != null ? var.sku_name : "B_Standard_B1ms"
+  storage_mb            = var.storage_mb != null ? var.storage_mb : 32768
+  backup_retention_days = var.backup_retention_days != null ? var.backup_retention_days : 7
 
   geo_redundant_backup_enabled = var.geo_redundant_backup_enabled
 
-  public_network_access_enabled = var.public_network_access_enabled
+  public_network_access_enabled = var.public_network_access_enabled != null ? var.public_network_access_enabled : false
 
   dynamic "maintenance_window" {
     for_each = var.maintenance_window != null ? [var.maintenance_window] : []
@@ -63,8 +63,8 @@ resource "azurerm_postgresql_flexible_server_database" "this" {
 
   name      = each.value.name
   server_id = azurerm_postgresql_flexible_server.this.id
-  charset   = lookup(each.value, "charset", "UTF8")
-  collation = lookup(each.value, "collation", "en_US.utf8")
+  charset   = lookup(each.value, "charset", var.default_charset != null ? var.default_charset : "UTF8")
+  collation = lookup(each.value, "collation", var.default_collation != null ? var.default_collation : "en_US.utf8")
 
   # tags는 PostgreSQL Flexible Server Database에서 지원되지 않음
   # tags = merge(var.tags, lookup(each.value, "tags", {}))

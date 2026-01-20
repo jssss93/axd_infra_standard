@@ -12,7 +12,7 @@ resource "azurerm_key_vault" "this" {
 
   rbac_authorization_enabled = var.rbac_authorization_enabled
 
-  public_network_access_enabled = var.public_network_access_enabled
+  public_network_access_enabled = var.public_network_access_enabled != null ? var.public_network_access_enabled : false
 
   purge_protection_enabled   = var.purge_protection_enabled
   soft_delete_retention_days = var.soft_delete_retention_days
@@ -23,7 +23,7 @@ resource "azurerm_key_vault" "this" {
       default_action             = network_acls.value.default_action
       bypass                     = lookup(network_acls.value, "bypass", "AzureServices")
       ip_rules                   = lookup(network_acls.value, "ip_rules", [])
-      virtual_network_subnet_ids  = lookup(network_acls.value, "virtual_network_subnet_ids", [])
+      virtual_network_subnet_ids = lookup(network_acls.value, "virtual_network_subnet_ids", [])
     }
   }
 
