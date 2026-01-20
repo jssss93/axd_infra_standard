@@ -46,10 +46,4 @@ module "openai" {
   tags = var.tags
 }
 
-# Key Vault Secret IDs (aggregated from service modules)
-locals {
-  key_vault_secret_ids = var.key_vault_id != null ? merge(
-    var.foundry_enabled && var.foundry_config != null && length(module.foundry) > 0 ? module.foundry[0].key_vault_secret_ids : {},
-    var.openai_enabled && var.openai_config != null && length(module.openai) > 0 ? module.openai[0].key_vault_secret_ids : {}
-  ) : {}
-}
+# Note: Key Vault secrets are now created by afterjob module in root

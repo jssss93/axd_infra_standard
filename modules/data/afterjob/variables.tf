@@ -4,6 +4,12 @@ variable "key_vault_id" {
   default     = null
 }
 
+variable "key_vault_enabled" {
+  description = "Whether Key Vault is enabled"
+  type        = bool
+  default     = false
+}
+
 variable "tags" {
   description = "A map of tags to assign to the resources"
   type        = map(string)
@@ -11,6 +17,12 @@ variable "tags" {
 }
 
 # ACR variables
+variable "container_registry_enabled" {
+  description = "Whether Container Registry is enabled"
+  type        = bool
+  default     = false
+}
+
 variable "acr_login_server" {
   description = "ACR login server URL"
   type        = string
@@ -32,6 +44,12 @@ variable "acr_admin_password" {
 }
 
 # Cosmos DB variables
+variable "cosmos_db_enabled" {
+  description = "Whether Cosmos DB is enabled"
+  type        = bool
+  default     = false
+}
+
 variable "cosmosdb_endpoint" {
   description = "Cosmos DB endpoint"
   type        = string
@@ -53,6 +71,12 @@ variable "cosmosdb_secondary_key" {
 }
 
 # PostgreSQL variables
+variable "postgresql_enabled" {
+  description = "Whether PostgreSQL is enabled"
+  type        = bool
+  default     = false
+}
+
 variable "postgresql_password" {
   description = "PostgreSQL administrator password"
   type        = string
@@ -73,6 +97,12 @@ variable "postgresql_admin_login" {
 }
 
 # Foundry variables
+variable "foundry_enabled" {
+  description = "Whether Foundry is enabled"
+  type        = bool
+  default     = false
+}
+
 variable "foundry_endpoint" {
   description = "Foundry endpoint"
   type        = string
@@ -80,6 +110,12 @@ variable "foundry_endpoint" {
 }
 
 # OpenAI variables
+variable "openai_enabled" {
+  description = "Whether OpenAI is enabled"
+  type        = bool
+  default     = false
+}
+
 variable "openai_endpoint" {
   description = "OpenAI endpoint"
   type        = string

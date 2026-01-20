@@ -56,36 +56,34 @@ module "networking" {
     }
   } : {}
   private_endpoints = var.private_endpoints_enabled ? {
-    for k, v in {
-      keyvault = var.key_vault_enabled && var.key_vault_config != null && module.data.key_vault_id != null ? {
-        name                          = "${local.use_naming_convention && var.key_vault_name == null ? local.naming.key_vault : var.key_vault_name}-pe"
-        subnet_id                     = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
-        private_connection_resource_id = module.data.key_vault_id
-        subresource_names              = ["vault"]
-        private_dns_zone_key           = "keyvault"
-      } : null
-      cosmos = var.cosmos_db_enabled && var.cosmos_db_config != null && module.data.cosmos_db_id != null ? {
-        name                          = "${local.use_naming_convention && var.cosmos_db_name == null ? local.naming.cosmos_db : var.cosmos_db_name}-pe"
-        subnet_id                     = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
-        private_connection_resource_id = module.data.cosmos_db_id
-        subresource_names              = ["Sql"]
-        private_dns_zone_key           = "cosmos"
-      } : null
-      postgres = var.postgresql_enabled && var.postgresql_config != null && module.data.postgresql_id != null ? {
-        name                          = "${local.use_naming_convention && var.postgresql_name == null ? local.naming.postgresql : var.postgresql_name}-pe"
-        subnet_id                     = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
-        private_connection_resource_id = module.data.postgresql_id
-        subresource_names              = ["postgresqlServer"]
-        private_dns_zone_key           = "postgres"
-      } : null
-      acr = var.container_registry_enabled && var.container_registry_config != null && module.data.container_registry_id != null ? {
-        name                          = "${local.use_naming_convention && var.container_registry_name == null ? local.naming.container_registry : var.container_registry_name}-pe"
-        subnet_id                     = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
-        private_connection_resource_id = module.data.container_registry_id
-        subresource_names              = ["registry"]
-        private_dns_zone_key           = "acr"
-      } : null
-    } : k => v if v != null
+    keyvault = var.key_vault_enabled && var.key_vault_config != null ? {
+      name                          = "${local.use_naming_convention && var.key_vault_name == null ? local.naming.key_vault : var.key_vault_name}-pe"
+      subnet_id                     = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
+      private_connection_resource_id = module.data.key_vault_id
+      subresource_names              = ["vault"]
+      private_dns_zone_key           = "keyvault"
+    } : null
+    cosmos = var.cosmos_db_enabled && var.cosmos_db_config != null ? {
+      name                          = "${local.use_naming_convention && var.cosmos_db_name == null ? local.naming.cosmos_db : var.cosmos_db_name}-pe"
+      subnet_id                     = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
+      private_connection_resource_id = module.data.cosmos_db_id
+      subresource_names              = ["Sql"]
+      private_dns_zone_key           = "cosmos"
+    } : null
+    postgres = var.postgresql_enabled && var.postgresql_config != null ? {
+      name                          = "${local.use_naming_convention && var.postgresql_name == null ? local.naming.postgresql : var.postgresql_name}-pe"
+      subnet_id                     = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
+      private_connection_resource_id = module.data.postgresql_id
+      subresource_names              = ["postgresqlServer"]
+      private_dns_zone_key           = "postgres"
+    } : null
+    acr = var.container_registry_enabled && var.container_registry_config != null ? {
+      name                          = "${local.use_naming_convention && var.container_registry_name == null ? local.naming.container_registry : var.container_registry_name}-pe"
+      subnet_id                     = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
+      private_connection_resource_id = module.data.container_registry_id
+      subresource_names              = ["registry"]
+      private_dns_zone_key           = "acr"
+    } : null
   } : {}
 
   tags = local.merged_tags
@@ -142,27 +140,33 @@ module "services" {
 module "afterjob" {
   source = "./modules/data/afterjob"
 
-  key_vault_id = local.key_vault_id
+  key_vault_id     = local.key_vault_id
+  key_vault_enabled = var.key_vault_enabled
 
   # ACR secrets (from data module)
+  container_registry_enabled = var.container_registry_enabled
   acr_login_server   = module.data.container_registry_login_server
   acr_admin_username = module.data.container_registry_admin_username
   acr_admin_password = module.data.container_registry_admin_password
 
   # Cosmos DB secrets (from data module)
+  cosmos_db_enabled = var.cosmos_db_enabled
   cosmosdb_endpoint     = module.data.cosmos_db_endpoint
   cosmosdb_primary_key  = module.data.cosmos_db_primary_key
   cosmosdb_secondary_key = module.data.cosmos_db_secondary_key
 
   # PostgreSQL secrets (from data module and variables)
+  postgresql_enabled = var.postgresql_enabled
   postgresql_password  = var.postgresql_enabled && var.postgresql_config != null ? var.postgresql_config.administrator_password : null
   postgresql_fqdn      = module.data.postgresql_fqdn
   postgresql_admin_login = var.postgresql_enabled && var.postgresql_config != null ? var.postgresql_config.administrator_login : null
 
   # Foundry secrets (from services module)
+  foundry_enabled  = var.foundry_enabled
   foundry_endpoint = module.services.foundry_endpoint
 
   # OpenAI secrets (from services module)
+  openai_enabled      = var.openai_enabled
   openai_endpoint     = module.services.openai_endpoint
   openai_primary_key  = module.services.openai_primary_access_key
   openai_secondary_key = module.services.openai_secondary_access_key

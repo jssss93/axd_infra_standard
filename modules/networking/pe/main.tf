@@ -13,8 +13,8 @@ resource "azurerm_private_dns_zone_virtual_network_link" "this" {
   for_each = {
     for link in flatten([
       for zone_key, zone in var.private_dns_zones : [
-        for vnet_id in zone.virtual_network_ids : {
-          key           = "${zone_key}-${substr(vnet_id, length(vnet_id) - 8, -1)}"
+        for idx, vnet_id in zone.virtual_network_ids : {
+          key           = "${zone_key}-${idx}"
           zone_key      = zone_key
           vnet_id       = vnet_id
           link_name     = lookup(zone, "virtual_network_link_name", null)
@@ -24,7 +24,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "this" {
     ]) : link.key => link
   }
 
-  name                  = each.value.link_name != null ? each.value.link_name : "${var.private_dns_zones[each.value.zone_key].name}-link-${substr(each.value.vnet_id, length(each.value.vnet_id) - 8, -1)}"
+  name                  = each.value.link_name != null ? each.value.link_name : "${var.private_dns_zones[each.value.zone_key].name}-link-${each.value.key}"
   resource_group_name   = var.resource_group_name
   private_dns_zone_name = azurerm_private_dns_zone.this[each.value.zone_key].name
   virtual_network_id    = each.value.vnet_id
@@ -33,9 +33,12 @@ resource "azurerm_private_dns_zone_virtual_network_link" "this" {
   tags = var.tags
 }
 
-# Private Endpoints
+# Private Endpoints - using for_each with static keys, filtering null values
 resource "azurerm_private_endpoint" "this" {
-  for_each = var.private_endpoints
+  for_each = {
+    for k, v in var.private_endpoints : k => v
+    if v != null
+  }
 
   name                = each.value.name
   location            = var.location
