@@ -52,7 +52,7 @@ variable "log_analytics_retention_days" {
 variable "container_apps" {
   description = "Map of Container App configurations"
   type = map(object({
-    name          = optional(string)  # 명명규칙이 적용되면 자동 생성됨
+    name          = optional(string)
     image         = string
     cpu           = optional(number, 0.25)
     memory        = optional(string, "0.5Gi")
@@ -84,10 +84,10 @@ variable "virtual_machines" {
     name                          = string
     size                          = string
     subnet_id                     = string  # Subnet ID
-    os_type                       = optional(string, "Linux")  # Linux or Windows
+    os_type                       = optional(string, "Linux")
     admin_username                = string
-    admin_password                 = optional(string)  # Required for Windows
-    admin_ssh_key                 = optional(string)  # Required for Linux
+    admin_password                 = optional(string)
+    admin_ssh_key                 = optional(string)
     private_ip_address            = optional(string)
     private_ip_address_allocation = optional(string, "Dynamic")
     public_ip_enabled             = optional(bool, false)
@@ -107,11 +107,12 @@ variable "virtual_machines" {
     boot_diagnostics_storage_account_uri    = optional(string)
     tags                                    = optional(map(string), {})
   }))
-  default = {}
+  default = null
 }
 
+# Key Vault ID (passed from parent module)
 variable "key_vault_id" {
-  description = "The ID of the Key Vault to reference secrets from (optional)"
+  description = "The ID of the Key Vault (created in root module)"
   type        = string
   default     = null
 }

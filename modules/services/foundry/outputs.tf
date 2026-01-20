@@ -42,10 +42,4 @@ output "deployment_names" {
   value       = length(var.deployments) > 0 ? { for k, v in azurerm_cognitive_deployment.foundry_deployments : k => v.name } : {}
 }
 
-# Key Vault Secret IDs
-output "key_vault_secret_ids" {
-  description = "Map of Key Vault secret names to their resource IDs"
-  value = {
-    "foundry-endpoint" = var.key_vault_id != null && length(azurerm_key_vault_secret.foundry_endpoint) > 0 ? azurerm_key_vault_secret.foundry_endpoint[0].id : null
-  }
-}
+# Note: Key Vault secrets are now created by afterjob module in root

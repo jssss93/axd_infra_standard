@@ -35,12 +35,4 @@ output "deployments" {
   value       = azurerm_cognitive_deployment.this
 }
 
-# Key Vault Secret IDs
-output "key_vault_secret_ids" {
-  description = "Map of Key Vault secret names to their resource IDs"
-  value = {
-    "openai-endpoint"     = var.key_vault_id != null && length(azurerm_key_vault_secret.openai_endpoint) > 0 ? azurerm_key_vault_secret.openai_endpoint[0].id : null
-    "openai-primary-key"  = var.key_vault_id != null && length(azurerm_key_vault_secret.openai_primary_key) > 0 ? azurerm_key_vault_secret.openai_primary_key[0].id : null
-    "openai-secondary-key" = var.key_vault_id != null && length(azurerm_key_vault_secret.openai_secondary_key) > 0 ? azurerm_key_vault_secret.openai_secondary_key[0].id : null
-  }
-}
+# Note: Key Vault secrets are now created by afterjob module in root

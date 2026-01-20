@@ -58,12 +58,4 @@ output "container_ids" {
   value       = { for k, v in azurerm_cosmosdb_sql_container.this : k => v.id }
 }
 
-# Key Vault Secret IDs
-output "key_vault_secret_ids" {
-  description = "Map of Key Vault secret names to their resource IDs"
-  value = {
-    "cosmosdb-endpoint"     = var.key_vault_id != null && length(azurerm_key_vault_secret.cosmosdb_endpoint) > 0 ? azurerm_key_vault_secret.cosmosdb_endpoint[0].id : null
-    "cosmosdb-primary-key"  = var.key_vault_id != null && length(azurerm_key_vault_secret.cosmosdb_primary_key) > 0 ? azurerm_key_vault_secret.cosmosdb_primary_key[0].id : null
-    "cosmosdb-secondary-key" = var.key_vault_id != null && length(azurerm_key_vault_secret.cosmosdb_secondary_key) > 0 ? azurerm_key_vault_secret.cosmosdb_secondary_key[0].id : null
-  }
-}
+# Note: Key Vault secrets are now created by afterjob module in root

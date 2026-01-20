@@ -10,8 +10,6 @@ resource "azurerm_log_analytics_workspace" "this" {
   tags = var.tags
 }
 
-# Key Vault secret IDs are passed from the parent module
-
 # Container App Environment
 resource "azurerm_container_app_environment" "this" {
   name                = var.container_app_environment_name

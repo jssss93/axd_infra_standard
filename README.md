@@ -12,7 +12,7 @@
 │   ├── networking/            # 네트워크 관련
 │   │   ├── vnet/             # Virtual Network 모듈
 │   │   ├── subnet/           # Subnet 모듈
-│   │   ├── application-gateway/  # Application Gateway 모듈
+│   │   ├── agw/                  # Application Gateway 모듈
 │   │   └── pe/               # Private Endpoints + Private DNS Zones 통합
 │   ├── compute/              # 컴퓨팅 리소스
 │   │   └── container-apps/   # Container Apps, VM, Log Analytics
@@ -381,7 +381,7 @@ Azure Subnet을 관리하는 모듈입니다. 여러 Subnet을 map으로 관리�
 - `subnet_names`: 서브넷 키에서 서브넷 이름으로의 맵
 - `subnets`: 서브넷 객체 맵
 
-#### Application Gateway 모듈 (`modules/networking/application-gateway/`)
+#### Application Gateway 모듈 (`modules/networking/agw/`)
 
 Azure Application Gateway를 관리하는 모듈입니다.
 
