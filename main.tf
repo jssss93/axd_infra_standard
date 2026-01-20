@@ -32,59 +32,58 @@ module "networking" {
   application_gateway_subnet_id = var.application_gateway_subnet_id
   application_gateway_config    = var.application_gateway_config
   container_app_fqdns           = module.compute.container_app_fqdns
-  private_endpoints_enabled     = var.private_endpoints_enabled
-  private_dns_zones = var.private_endpoints_enabled ? {
-    keyvault = {
-      name                 = "privatelink.vaultcore.azure.net"
-      virtual_network_ids  = [] # Will be set to vnet_id inside the networking module
-      registration_enabled = false
-    }
-    cosmos = {
-      name                 = "privatelink.documents.azure.com"
-      virtual_network_ids  = []
-      registration_enabled = false
-    }
-    postgres = {
-      name                 = "privatelink.postgres.database.azure.com"
-      virtual_network_ids  = []
-      registration_enabled = false
-    }
-    acr = {
-      name                 = "privatelink.azurecr.io"
-      virtual_network_ids  = []
-      registration_enabled = false
-    }
-  } : {}
-  private_endpoints = var.private_endpoints_enabled ? {
-    keyvault = var.key_vault_enabled && var.key_vault_config != null ? {
-      name                           = "${local.use_naming_convention && var.key_vault_name == null ? local.naming.key_vault : var.key_vault_name}-pe"
-      subnet_id                      = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
-      private_connection_resource_id = module.data.key_vault_id
-      subresource_names              = ["vault"]
-      private_dns_zone_key           = "keyvault"
-    } : null
-    cosmos = var.cosmos_db_enabled && var.cosmos_db_config != null ? {
-      name                           = "${local.use_naming_convention && var.cosmos_db_name == null ? local.naming.cosmos_db : var.cosmos_db_name}-pe"
-      subnet_id                      = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
-      private_connection_resource_id = module.data.cosmos_db_id
-      subresource_names              = ["Sql"]
-      private_dns_zone_key           = "cosmos"
-    } : null
-    postgres = var.postgresql_enabled && var.postgresql_config != null ? {
-      name                           = "${local.use_naming_convention && var.postgresql_name == null ? local.naming.postgresql : var.postgresql_name}-pe"
-      subnet_id                      = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
-      private_connection_resource_id = module.data.postgresql_id
-      subresource_names              = ["postgresqlServer"]
-      private_dns_zone_key           = "postgres"
-    } : null
-    acr = var.container_registry_enabled && var.container_registry_config != null ? {
-      name                           = "${local.use_naming_convention && var.container_registry_name == null ? local.naming.container_registry : var.container_registry_name}-pe"
-      subnet_id                      = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
-      private_connection_resource_id = module.data.container_registry_id
-      subresource_names              = ["registry"]
-      private_dns_zone_key           = "acr"
-    } : null
-  } : {}
+  private_endpoints_enabled = var.private_endpoints_enabled
+  # Private DNS Zones: 변수가 제공되면 사용, 없으면 기본값 사용
+  private_dns_zones = var.private_endpoints_enabled ? (
+    var.private_dns_zones_config != null ? var.private_dns_zones_config : local.default_private_dns_zones
+  ) : {}
+  # Private Endpoints: 변수가 제공되면 사용, 없으면 기본값 생성 (null 값 필터링)
+  private_endpoints = var.private_endpoints_config != null ? var.private_endpoints_config : (
+    var.private_endpoints_enabled ? {
+      for k, v in {
+        keyvault = var.key_vault_enabled && var.key_vault_config != null ? {
+          name                            = "${local.use_naming_convention && var.key_vault_name == null ? local.naming.key_vault : var.key_vault_name}-pe"
+          subnet_id                       = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
+          private_connection_resource_id  = module.data.key_vault_id
+          subresource_names               = local.private_endpoint_service_config.keyvault.subresource_names
+          private_dns_zone_key            = local.private_endpoint_service_config.keyvault.private_dns_zone_key
+          is_manual_connection            = false
+          private_service_connection_name = null
+          request_message                 = null
+        } : null
+        cosmos = var.cosmos_db_enabled && var.cosmos_db_config != null ? {
+          name                            = "${local.use_naming_convention && var.cosmos_db_name == null ? local.naming.cosmos_db : var.cosmos_db_name}-pe"
+          subnet_id                       = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
+          private_connection_resource_id  = module.data.cosmos_db_id
+          subresource_names               = local.private_endpoint_service_config.cosmos.subresource_names
+          private_dns_zone_key            = local.private_endpoint_service_config.cosmos.private_dns_zone_key
+          is_manual_connection            = false
+          private_service_connection_name = null
+          request_message                 = null
+        } : null
+        postgres = var.postgresql_enabled && var.postgresql_config != null ? {
+          name                            = "${local.use_naming_convention && var.postgresql_name == null ? local.naming.postgresql : var.postgresql_name}-pe"
+          subnet_id                       = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
+          private_connection_resource_id  = module.data.postgresql_id
+          subresource_names               = local.private_endpoint_service_config.postgres.subresource_names
+          private_dns_zone_key            = local.private_endpoint_service_config.postgres.private_dns_zone_key
+          is_manual_connection            = false
+          private_service_connection_name = null
+          request_message                 = null
+        } : null
+        acr = var.container_registry_enabled && var.container_registry_config != null ? {
+          name                            = "${local.use_naming_convention && var.container_registry_name == null ? local.naming.container_registry : var.container_registry_name}-pe"
+          subnet_id                       = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
+          private_connection_resource_id  = module.data.container_registry_id
+          subresource_names               = local.private_endpoint_service_config.acr.subresource_names
+          private_dns_zone_key            = local.private_endpoint_service_config.acr.private_dns_zone_key
+          is_manual_connection            = false
+          private_service_connection_name = null
+          request_message                 = null
+        } : null
+      } : k => v if v != null
+    } : {}
+  )
 
   tags = local.merged_tags
 }

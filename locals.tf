@@ -128,4 +128,48 @@ locals {
     public_network_access_enabled = false
     local_authentication_disabled = false # 기본적으로는 false (점진적 전환)
   }, var.security_defaults != null ? var.security_defaults : {})
+
+  # Private DNS Zone 기본값
+  default_private_dns_zones = {
+    keyvault = {
+      name                 = "privatelink.vaultcore.azure.net"
+      virtual_network_ids  = []
+      registration_enabled = false
+    }
+    cosmos = {
+      name                 = "privatelink.documents.azure.com"
+      virtual_network_ids  = []
+      registration_enabled = false
+    }
+    postgres = {
+      name                 = "privatelink.postgres.database.azure.com"
+      virtual_network_ids  = []
+      registration_enabled = false
+    }
+    acr = {
+      name                 = "privatelink.azurecr.io"
+      virtual_network_ids  = []
+      registration_enabled = false
+    }
+  }
+
+  # Private Endpoint 서비스별 기본 설정 (subresource_names, private_dns_zone_key)
+  private_endpoint_service_config = {
+    keyvault = {
+      subresource_names    = ["vault"]
+      private_dns_zone_key = "keyvault"
+    }
+    cosmos = {
+      subresource_names    = ["Sql"]
+      private_dns_zone_key = "cosmos"
+    }
+    postgres = {
+      subresource_names    = ["postgresqlServer"]
+      private_dns_zone_key = "postgres"
+    }
+    acr = {
+      subresource_names    = ["registry"]
+      private_dns_zone_key = "acr"
+    }
+  }
 }

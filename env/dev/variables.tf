@@ -627,6 +627,31 @@ variable "private_endpoint_subnet_id" {
   default     = null
 }
 
+variable "private_dns_zones_config" {
+  description = "Custom Private DNS Zone configurations (optional, defaults to standard Azure Private Link zones)"
+  type = map(object({
+    name                 = string
+    virtual_network_ids  = optional(list(string), [])
+    registration_enabled = optional(bool, false)
+  }))
+  default = null
+}
+
+variable "private_endpoints_config" {
+  description = "Custom Private Endpoint configurations (optional, auto-generated if not provided)"
+  type = map(object({
+    name                            = optional(string)
+    subnet_id                       = optional(string)
+    private_connection_resource_id  = optional(string)
+    subresource_names               = optional(list(string))
+    private_dns_zone_key            = optional(string)
+    private_service_connection_name = optional(string)
+    is_manual_connection            = optional(bool, false)
+    request_message                 = optional(string)
+  }))
+  default = null
+}
+
 variable "virtual_machines" {
   description = "Map of Virtual Machine configurations"
   type = map(object({

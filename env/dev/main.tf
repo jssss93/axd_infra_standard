@@ -81,6 +81,8 @@ module "infrastructure" {
   # Private Endpoints (선택)
   private_endpoints_enabled  = var.private_endpoints_enabled
   private_endpoint_subnet_id = var.private_endpoint_subnet_id
+  private_dns_zones_config   = var.private_dns_zones_config
+  private_endpoints_config   = var.private_endpoints_config
 
   # Tags
   common_tags = merge(
