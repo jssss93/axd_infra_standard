@@ -1,7 +1,16 @@
+# ============================================================================
+# 환경별 변수 정의 (Prod 환경)
+# ============================================================================
+# 주의: Terraform 모듈 구조상 환경별 variables.tf에 모든 변수를 정의해야 합니다.
+# 변수 정의는 루트 variables.tf (../../variables.tf)와 동일하게 유지하며,
+# 환경별로 다른 기본값만 오버라이드합니다.
+# ============================================================================
+
+# 환경별 기본값 오버라이드 변수
 variable "environment" {
   description = "환경 이름 (필수) - 예: dev, staging, prod, nw, devops"
   type        = string
-  default     = "dev"
+  default     = "prod"  # Prod 환경 기본값
 }
 
 variable "project_name" {
@@ -59,6 +68,8 @@ variable "subscription_id" {
 variable "vnet_address_space" {
   description = "Virtual Network address space"
   type        = list(string)
+  # 주의: Prod 환경에서는 terraform.tfvars에서 필수로 제공해야 함
+  # 기본값: ["10.2.0.0/16"] (terraform.tfvars.example 참조)
 }
 
 variable "dns_servers" {
@@ -162,3 +173,15 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+# ============================================================================
+# 참고사항
+# ============================================================================
+# 이 파일의 변수 정의는 루트 variables.tf (../../variables.tf)와 동일하게 유지됩니다.
+# 환경별로 다른 기본값만 오버라이드하며, 실제 값은 terraform.tfvars에서 관리합니다.
+# 
+# 변수 정의 변경 시:
+# 1. 루트 variables.tf (../../variables.tf)를 먼저 수정
+# 2. 이 파일도 동일하게 반영 (타입, 설명 등)
+# 3. 환경별 기본값만 필요시 오버라이드
+# ============================================================================
