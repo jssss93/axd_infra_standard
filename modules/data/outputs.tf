@@ -31,40 +31,40 @@ output "container_registry_login_server" {
 }
 
 # Cosmos DB Outputs
-output "cosmos_db_id" {
+output "cdb_id" {
   description = "The ID of the Cosmos DB Account"
-  value       = var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? module.cosmos[0].id : null
+  value       = var.cdb_enabled && var.cdb_config != null && length(module.cdb) > 0 ? module.cdb[0].id : null
 }
 
-output "cosmos_db_name" {
+output "cdb_name" {
   description = "The name of the Cosmos DB Account"
-  value       = var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? module.cosmos[0].name : null
+  value       = var.cdb_enabled && var.cdb_config != null && length(module.cdb) > 0 ? module.cdb[0].name : null
 }
 
-output "cosmos_db_endpoint" {
+output "cdb_endpoint" {
   description = "The endpoint of the Cosmos DB Account"
-  value       = var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? module.cosmos[0].endpoint : null
+  value       = var.cdb_enabled && var.cdb_config != null && length(module.cdb) > 0 ? module.cdb[0].endpoint : null
 }
 
-output "cosmos_db_database_ids" {
+output "cdb_database_ids" {
   description = "Map of Cosmos DB SQL Database IDs"
-  value       = var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? module.cosmos[0].database_ids : {}
+  value       = var.cdb_enabled && var.cdb_config != null && length(module.cdb) > 0 ? module.cdb[0].database_ids : {}
 }
 
-output "cosmos_db_container_ids" {
+output "cdb_container_ids" {
   description = "Map of Cosmos DB SQL Container IDs"
-  value       = var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? module.cosmos[0].container_ids : {}
+  value       = var.cdb_enabled && var.cdb_config != null && length(module.cdb) > 0 ? module.cdb[0].container_ids : {}
 }
 
-output "cosmos_db_primary_key" {
+output "cdb_primary_key" {
   description = "The Primary key for the CosmosDB Account"
-  value       = var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? module.cosmos[0].primary_key : null
+  value       = var.cdb_enabled && var.cdb_config != null && length(module.cdb) > 0 ? module.cdb[0].primary_key : null
   sensitive   = true
 }
 
-output "cosmos_db_secondary_key" {
+output "cdb_secondary_key" {
   description = "The Secondary key for the CosmosDB Account"
-  value       = var.cosmos_db_enabled && var.cosmos_db_config != null && length(module.cosmos) > 0 ? module.cosmos[0].secondary_key : null
+  value       = var.cdb_enabled && var.cdb_config != null && length(module.cdb) > 0 ? module.cdb[0].secondary_key : null
   sensitive   = true
 }
 

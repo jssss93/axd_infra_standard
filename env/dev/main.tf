@@ -59,9 +59,9 @@ module "infrastructure" {
   key_vault_config  = var.key_vault_config
 
   # Cosmos DB (선택)
-  cosmos_db_enabled = var.cosmos_db_enabled
-  cosmos_db_name    = var.cosmos_db_name
-  cosmos_db_config  = var.cosmos_db_config
+  cdb_enabled = var.cdb_enabled
+  cdb_name    = var.cdb_name
+  cdb_config  = var.cdb_config
 
   # PostgreSQL (선택)
   postgresql_enabled = var.postgresql_enabled

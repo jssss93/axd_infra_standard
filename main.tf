@@ -59,7 +59,7 @@ module "naming" {
     vnet                      = var.vnet_name
     key_vault                 = var.key_vault_name
     container_registry        = var.container_registry_name
-    cosmos_db                 = var.cosmos_db_name
+    cosmos_db                 = var.cdb_name
     postgresql                = var.postgresql_name
     application_gateway       = var.application_gateway_name
     container_app_environment = var.container_app_environment_name
@@ -121,10 +121,10 @@ module "networking" {
           private_service_connection_name = null
           request_message                 = null
         } : null
-        cosmos = var.cosmos_db_enabled && var.cosmos_db_config != null ? {
+        cosmos = var.cdb_enabled && var.cdb_config != null ? {
           name                            = "${module.naming.cosmos_db}-pe"
           subnet_id                       = var.private_endpoint_subnet_id != null ? module.networking.subnet_ids[var.private_endpoint_subnet_id] : module.networking.subnet_ids["pe"]
-          private_connection_resource_id  = module.data.cosmos_db_id
+          private_connection_resource_id  = module.data.cdb_id
           subresource_names               = local.private_endpoint_service_config.cosmos.subresource_names
           private_dns_zone_key            = local.private_endpoint_service_config.cosmos.private_dns_zone_key
           is_manual_connection            = false
@@ -170,9 +170,9 @@ module "data" {
   container_registry_enabled = var.container_registry_enabled
   container_registry_name    = module.naming.container_registry
   container_registry_config  = var.container_registry_config
-  cosmos_db_enabled          = var.cosmos_db_enabled
-  cosmos_db_name             = module.naming.cosmos_db
-  cosmos_db_config           = var.cosmos_db_config
+  cdb_enabled          = var.cdb_enabled
+  cdb_name             = module.naming.cosmos_db
+  cdb_config           = var.cdb_config
   postgresql_enabled         = var.postgresql_enabled
   postgresql_name            = module.naming.postgresql
   postgresql_config          = var.postgresql_config
@@ -227,10 +227,10 @@ module "afterjob" {
   acr_admin_password         = module.data.container_registry_admin_password
 
   # Cosmos DB secrets (from data module)
-  cosmos_db_enabled      = var.cosmos_db_enabled
-  cosmosdb_endpoint      = module.data.cosmos_db_endpoint
-  cosmosdb_primary_key   = module.data.cosmos_db_primary_key
-  cosmosdb_secondary_key = module.data.cosmos_db_secondary_key
+  cdb_enabled      = var.cdb_enabled
+  cdb_endpoint      = module.data.cdb_endpoint
+  cdb_primary_key   = module.data.cdb_primary_key
+  cdb_secondary_key = module.data.cdb_secondary_key
 
   # PostgreSQL secrets (from data module and variables)
   postgresql_enabled     = var.postgresql_enabled

@@ -10,6 +10,16 @@ resource "azurerm_subnet" "this" {
   # Optional configurations
   service_endpoints           = try(each.value.service_endpoints, null)
   service_endpoint_policy_ids = try(each.value.service_endpoint_policy_ids, null)
+  
+  # Private Endpoint network policies (agw subnet은 제외하고 기본값 Disabled)
+  # "Disabled" = Private Endpoint 네트워크 정책 비활성화 (Private Endpoint 사용 가능)
+  # "Enabled" = Private Endpoint 네트워크 정책 활성화
+  private_endpoint_network_policies = try(
+    each.value.private_endpoint_network_policies_enabled != null ? (
+      each.value.private_endpoint_network_policies_enabled ? "Enabled" : "Disabled"
+    ) : null,
+    each.key == "agw" ? "Enabled" : "Disabled"  # agw는 Enabled, 나머지는 Disabled
+  )
 
   # Delegation block
   dynamic "delegation" {

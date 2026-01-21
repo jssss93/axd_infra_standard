@@ -50,26 +50,26 @@ variable "acr_admin_password" {
 }
 
 # Cosmos DB variables
-variable "cosmos_db_enabled" {
+variable "cdb_enabled" {
   description = "Whether Cosmos DB is enabled"
   type        = bool
   default     = false
 }
 
-variable "cosmosdb_endpoint" {
+variable "cdb_endpoint" {
   description = "Cosmos DB endpoint"
   type        = string
   default     = null
 }
 
-variable "cosmosdb_primary_key" {
+variable "cdb_primary_key" {
   description = "Cosmos DB primary key"
   type        = string
   default     = null
   sensitive   = true
 }
 
-variable "cosmosdb_secondary_key" {
+variable "cdb_secondary_key" {
   description = "Cosmos DB secondary key"
   type        = string
   default     = null

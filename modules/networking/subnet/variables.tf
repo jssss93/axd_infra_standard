@@ -17,6 +17,7 @@ variable "subnets" {
     route_table_id              = optional(string)
     service_endpoints           = optional(list(string))
     service_endpoint_policy_ids = optional(list(string))
+    private_endpoint_network_policies_enabled = optional(bool) # Private Endpoint용 네트워크 정책 활성화 여부 (bool, 내부적으로 string으로 변환)
     delegation = optional(object({
       name = string
       service_delegation = object({

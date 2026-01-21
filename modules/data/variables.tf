@@ -116,19 +116,19 @@ variable "container_registry_config" {
 }
 
 # Cosmos DB variables
-variable "cosmos_db_enabled" {
+variable "cdb_enabled" {
   description = "Whether to create Cosmos DB"
   type        = bool
   default     = false
 }
 
-variable "cosmos_db_name" {
+variable "cdb_name" {
   description = "Cosmos DB name"
   type        = string
   default     = null
 }
 
-variable "cosmos_db_config" {
+variable "cdb_config" {
   description = "Cosmos DB configuration"
   type = object({
     offer_type              = optional(string, null)

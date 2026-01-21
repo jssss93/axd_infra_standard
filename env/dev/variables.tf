@@ -87,6 +87,7 @@ variable "subnets" {
     route_table_id              = optional(string)
     service_endpoints           = optional(list(string))
     service_endpoint_policy_ids = optional(list(string))
+    private_endpoint_network_policies_enabled = optional(bool) # Private Endpoint용 네트워크 정책 활성화 여부 (agw 제외 기본값: false)
     delegation = optional(object({
       name = string
       service_delegation = object({
@@ -376,19 +377,19 @@ variable "key_vault_config" {
 }
 
 # Cosmos DB 변수
-variable "cosmos_db_enabled" {
+variable "cdb_enabled" {
   description = "Whether to create Cosmos DB"
   type        = bool
   default     = false
 }
 
-variable "cosmos_db_name" {
+variable "cdb_name" {
   description = "Cosmos DB 이름 (선택, 지정하지 않으면 네이밍 규칙 자동 적용)"
   type        = string
   default     = null
 }
 
-variable "cosmos_db_config" {
+variable "cdb_config" {
   description = "Cosmos DB 설정"
   type = object({
     offer_type              = optional(string, null)

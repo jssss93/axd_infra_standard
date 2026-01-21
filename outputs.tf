@@ -102,29 +102,29 @@ output "key_vault_secret_ids" {
 }
 
 # Cosmos DB Outputs
-output "cosmos_db_id" {
+output "cdb_id" {
   description = "The ID of the Cosmos DB Account"
-  value       = module.data.cosmos_db_id
+  value       = module.data.cdb_id
 }
 
-output "cosmos_db_name" {
+output "cdb_name" {
   description = "The name of the Cosmos DB Account"
-  value       = module.data.cosmos_db_name
+  value       = module.data.cdb_name
 }
 
-output "cosmos_db_endpoint" {
+output "cdb_endpoint" {
   description = "The endpoint of the Cosmos DB Account"
-  value       = module.data.cosmos_db_endpoint
+  value       = module.data.cdb_endpoint
 }
 
-output "cosmos_db_database_ids" {
+output "cdb_database_ids" {
   description = "Map of Cosmos DB SQL Database IDs"
-  value       = module.data.cosmos_db_database_ids
+  value       = module.data.cdb_database_ids
 }
 
-output "cosmos_db_container_ids" {
+output "cdb_container_ids" {
   description = "Map of Cosmos DB SQL Container IDs"
-  value       = module.data.cosmos_db_container_ids
+  value       = module.data.cdb_container_ids
 }
 
 # PostgreSQL Outputs

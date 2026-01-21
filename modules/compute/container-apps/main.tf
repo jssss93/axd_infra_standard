@@ -41,12 +41,9 @@ resource "azurerm_container_app" "this" {
   resource_group_name          = var.resource_group_name
   revision_mode                = try(each.value.revision_mode, var.default_revision_mode != null ? var.default_revision_mode : "Single")
 
-  # Add identity if Key Vault secrets are referenced and this app uses secrets
-  dynamic "identity" {
-    for_each = var.key_vault_id != null && length(try(each.value.secrets, [])) > 0 ? [1] : []
-    content {
-      type = var.container_app_identity_type != null ? var.container_app_identity_type : "SystemAssigned"
-    }
+  # System Assigned Identity - always enabled
+  identity {
+    type = var.container_app_identity_type != null ? var.container_app_identity_type : "SystemAssigned"
   }
 
   # Key Vault secrets reference - only include secrets used by this container app

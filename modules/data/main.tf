@@ -54,34 +54,34 @@ module "acr" {
 }
 
 # Cosmos DB Module
-module "cosmos" {
-  count = var.cosmos_db_enabled && var.cosmos_db_config != null ? 1 : 0
+module "cdb" {
+  count = var.cdb_enabled && var.cdb_config != null ? 1 : 0
 
-  source = "./cosmos"
+  source = "./cdb"
 
-  name                               = var.cosmos_db_name
+  name                               = var.cdb_name
   resource_group_name                = var.resource_group_name
   location                           = var.location
-  offer_type                         = try(var.cosmos_db_config.offer_type, null)
-  kind                               = try(var.cosmos_db_config.kind, null)
-  consistency_level                  = try(var.cosmos_db_config.consistency_level, null)
-  max_interval_in_seconds            = try(var.cosmos_db_config.max_interval_in_seconds, 5)
-  max_staleness_prefix               = try(var.cosmos_db_config.max_staleness_prefix, 100)
-  capabilities                       = try(var.cosmos_db_config.capabilities, null)
-  geo_locations                      = var.cosmos_db_config.geo_locations
-  backup                             = try(var.cosmos_db_config.backup, null)
-  cors_rule                          = try(var.cosmos_db_config.cors_rule, null)
-  is_virtual_network_filter_enabled  = try(var.cosmos_db_config.is_virtual_network_filter_enabled, false)
-  virtual_network_rules              = try(var.cosmos_db_config.virtual_network_rules, [])
-  ip_range_filter                    = try(var.cosmos_db_config.ip_range_filter, null) != null ? (can(tolist(var.cosmos_db_config.ip_range_filter)) ? var.cosmos_db_config.ip_range_filter : [var.cosmos_db_config.ip_range_filter]) : null
-  public_network_access_enabled      = try(var.cosmos_db_config.public_network_access_enabled, null)
-  access_key_metadata_writes_enabled = try(var.cosmos_db_config.access_key_metadata_writes_enabled, true)
-  local_authentication_disabled      = try(var.cosmos_db_config.local_authentication_disabled, false)
-  identity_type                      = try(var.cosmos_db_config.identity_type, "SystemAssigned")
-  identity_ids                       = try(var.cosmos_db_config.identity_ids, [])
-  databases                          = try(var.cosmos_db_config.databases, {})
-  containers                         = try(var.cosmos_db_config.containers, {})
-  default_indexing_mode              = try(var.cosmos_db_config.default_indexing_mode, null)
+  offer_type                         = try(var.cdb_config.offer_type, null)
+  kind                               = try(var.cdb_config.kind, null)
+  consistency_level                  = try(var.cdb_config.consistency_level, null)
+  max_interval_in_seconds            = try(var.cdb_config.max_interval_in_seconds, 5)
+  max_staleness_prefix               = try(var.cdb_config.max_staleness_prefix, 100)
+  capabilities                       = try(var.cdb_config.capabilities, null)
+  geo_locations                      = var.cdb_config.geo_locations
+  backup                             = try(var.cdb_config.backup, null)
+  cors_rule                          = try(var.cdb_config.cors_rule, null)
+  is_virtual_network_filter_enabled  = try(var.cdb_config.is_virtual_network_filter_enabled, false)
+  virtual_network_rules              = try(var.cdb_config.virtual_network_rules, [])
+  ip_range_filter                    = try(var.cdb_config.ip_range_filter, null) != null ? (can(tolist(var.cdb_config.ip_range_filter)) ? var.cdb_config.ip_range_filter : [var.cdb_config.ip_range_filter]) : null
+  public_network_access_enabled      = try(var.cdb_config.public_network_access_enabled, null)
+  access_key_metadata_writes_enabled = try(var.cdb_config.access_key_metadata_writes_enabled, true)
+  local_authentication_disabled      = try(var.cdb_config.local_authentication_disabled, false)
+  identity_type                      = try(var.cdb_config.identity_type, "SystemAssigned")
+  identity_ids                       = try(var.cdb_config.identity_ids, [])
+  databases                          = try(var.cdb_config.databases, {})
+  containers                         = try(var.cdb_config.containers, {})
+  default_indexing_mode              = try(var.cdb_config.default_indexing_mode, null)
 
   tags = var.tags
 }

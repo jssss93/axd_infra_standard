@@ -46,11 +46,11 @@ resource "azurerm_key_vault_secret" "acr_admin_password" {
 }
 
 # Key Vault Secrets for Cosmos DB
-resource "azurerm_key_vault_secret" "cosmosdb_endpoint" {
-  count = var.key_vault_enabled && var.cosmos_db_enabled && var.create_secrets ? 1 : 0
+resource "azurerm_key_vault_secret" "cdb_endpoint" {
+  count = var.key_vault_enabled && var.cdb_enabled && var.create_secrets ? 1 : 0
 
   name         = local.secret_names.cosmosdb_endpoint
-  value        = var.cosmosdb_endpoint
+  value        = var.cdb_endpoint
   content_type = local.secret_content_type
   key_vault_id = var.key_vault_id
 
@@ -61,11 +61,11 @@ resource "azurerm_key_vault_secret" "cosmosdb_endpoint" {
   }
 }
 
-resource "azurerm_key_vault_secret" "cosmosdb_primary_key" {
-  count = var.key_vault_enabled && var.cosmos_db_enabled && var.create_secrets ? 1 : 0
+resource "azurerm_key_vault_secret" "cdb_primary_key" {
+  count = var.key_vault_enabled && var.cdb_enabled && var.create_secrets ? 1 : 0
 
   name         = local.secret_names.cosmosdb_primary_key
-  value        = var.cosmosdb_primary_key
+  value        = var.cdb_primary_key
   content_type = local.secret_content_type
   key_vault_id = var.key_vault_id
 
@@ -76,11 +76,11 @@ resource "azurerm_key_vault_secret" "cosmosdb_primary_key" {
   }
 }
 
-resource "azurerm_key_vault_secret" "cosmosdb_secondary_key" {
-  count = var.key_vault_enabled && var.cosmos_db_enabled && var.create_secrets ? 1 : 0
+resource "azurerm_key_vault_secret" "cdb_secondary_key" {
+  count = var.key_vault_enabled && var.cdb_enabled && var.create_secrets ? 1 : 0
 
   name         = local.secret_names.cosmosdb_secondary_key
-  value        = var.cosmosdb_secondary_key
+  value        = var.cdb_secondary_key
   content_type = local.secret_content_type
   key_vault_id = var.key_vault_id
 

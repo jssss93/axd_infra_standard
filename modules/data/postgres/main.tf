@@ -31,12 +31,9 @@ resource "azurerm_postgresql_flexible_server" "this" {
     }
   }
 
-  dynamic "identity" {
-    for_each = var.identity_type != null ? [1] : []
-    content {
-      type         = var.identity_type
-      identity_ids = var.identity_ids
-    }
+  identity {
+    type         = var.identity_type != null ? var.identity_type : "SystemAssigned"
+    identity_ids = var.identity_type == "UserAssigned" ? var.identity_ids : []
   }
 
   tags = var.tags

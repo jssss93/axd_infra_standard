@@ -7,12 +7,9 @@ resource "azurerm_cognitive_account" "openai" {
 
   public_network_access_enabled = var.public_network_access_enabled != null ? var.public_network_access_enabled : false
 
-  dynamic "identity" {
-    for_each = var.identity_type != null ? [1] : []
-    content {
-      type         = var.identity_type
-      identity_ids = var.identity_ids
-    }
+  identity {
+    type         = var.identity_type != null ? var.identity_type : "SystemAssigned"
+    identity_ids = var.identity_type == "UserAssigned" ? var.identity_ids : []
   }
 
   tags = var.tags

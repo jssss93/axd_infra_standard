@@ -25,6 +25,11 @@ resource "azurerm_storage_account" "foundry" {
   # Public network access 설정 (기본값: false - 보안 정책)
   public_network_access_enabled = var.storage_account_public_network_access_enabled != null ? var.storage_account_public_network_access_enabled : false
 
+  # System Assigned Identity - always enabled
+  identity {
+    type = "SystemAssigned"
+  }
+
   tags = var.tags
 }
 

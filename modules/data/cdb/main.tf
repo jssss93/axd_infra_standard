@@ -69,12 +69,9 @@ resource "azurerm_cosmosdb_account" "this" {
   access_key_metadata_writes_enabled = var.access_key_metadata_writes_enabled
   local_authentication_disabled      = var.local_authentication_disabled
 
-  dynamic "identity" {
-    for_each = var.identity_type != null ? [1] : []
-    content {
-      type         = var.identity_type
-      identity_ids = var.identity_ids
-    }
+  identity {
+    type         = var.identity_type != null ? var.identity_type : "SystemAssigned"
+    identity_ids = var.identity_type == "UserAssigned" ? var.identity_ids : []
   }
 
   tags = var.tags
