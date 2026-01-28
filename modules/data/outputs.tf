@@ -1,7 +1,7 @@
 # Key Vault Outputs
 output "key_vault_id" {
   description = "The ID of the Key Vault"
-  value       = var.key_vault_enabled && var.key_vault_config != null && length(module.keyvault) > 0 ? module.keyvault[0].id : null
+  value       = local.key_vault_id
 }
 
 output "key_vault_name" {

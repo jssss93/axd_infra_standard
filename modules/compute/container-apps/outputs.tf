@@ -28,31 +28,3 @@ output "container_apps" {
   value       = azurerm_container_app.this
 }
 
-# Virtual Machine Outputs
-output "virtual_machine_ids" {
-  description = "Map of Virtual Machine keys to their IDs (Linux and Windows combined)"
-  value = merge(
-    { for k, v in azurerm_linux_virtual_machine.this : k => v.id },
-    { for k, v in azurerm_windows_virtual_machine.this : k => v.id }
-  )
-}
-
-output "virtual_machine_names" {
-  description = "Map of Virtual Machine keys to their names"
-  value = merge(
-    { for k, v in azurerm_linux_virtual_machine.this : k => v.name },
-    { for k, v in azurerm_windows_virtual_machine.this : k => v.name }
-  )
-}
-
-output "virtual_machine_private_ip_addresses" {
-  description = "Map of Virtual Machine keys to their private IP addresses"
-  value       = { for k, v in azurerm_network_interface.vm : k => v.ip_configuration[0].private_ip_address }
-}
-
-output "virtual_machine_public_ip_addresses" {
-  description = "Map of Virtual Machine keys to their public IP addresses (if enabled)"
-  value = {
-    for k, v in azurerm_public_ip.vm : k => v.ip_address
-  }
-}

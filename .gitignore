@@ -33,3 +33,10 @@ terraform.rc
 
 # Ignore lock files (optional, uncomment if you want to ignore)
 # .terraform.lock.hcl
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~

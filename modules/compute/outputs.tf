@@ -21,12 +21,22 @@ output "container_app_ids" {
 
 # Virtual Machine Outputs
 output "virtual_machine_ids" {
-  description = "Map of Virtual Machine keys to their IDs"
-  value       = module.container_apps.virtual_machine_ids
+  description = "Map of Virtual Machine IDs"
+  value       = length(module.virtual_machines) > 0 ? module.virtual_machines[0].virtual_machine_ids : {}
 }
 
 output "virtual_machine_names" {
-  description = "Map of Virtual Machine keys to their names"
-  value       = module.container_apps.virtual_machine_names
+  description = "Map of Virtual Machine names"
+  value       = length(module.virtual_machines) > 0 ? module.virtual_machines[0].virtual_machine_names : {}
+}
+
+output "virtual_machine_private_ip_addresses" {
+  description = "Map of Virtual Machine private IP addresses"
+  value       = length(module.virtual_machines) > 0 ? module.virtual_machines[0].virtual_machine_private_ip_addresses : {}
+}
+
+output "virtual_machine_public_ip_addresses" {
+  description = "Map of Virtual Machine public IP addresses"
+  value       = length(module.virtual_machines) > 0 ? module.virtual_machines[0].virtual_machine_public_ip_addresses : {}
 }
 

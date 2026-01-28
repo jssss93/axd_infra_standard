@@ -12,7 +12,6 @@ module "container_apps" {
   log_analytics_workspace_sku    = var.log_analytics_workspace_sku
   log_analytics_retention_days   = var.log_analytics_retention_days
   container_apps                 = var.container_apps
-  virtual_machines               = var.virtual_machines
 
   # Key Vault integration
   key_vault_id                = var.key_vault_id
@@ -20,4 +19,15 @@ module "container_apps" {
   container_app_identity_type = var.container_app_identity_type
 
   tags = var.tags
+}
+
+# Virtual Machines Module
+module "virtual_machines" {
+  source = "./virtual-machines"
+  count  = var.virtual_machines != null && length(var.virtual_machines) > 0 ? 1 : 0
+
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  virtual_machines    = var.virtual_machines
+  tags                = var.tags
 }

@@ -7,6 +7,7 @@
 ```
 .
 ├── modules/                    # 재사용 가능한 모듈
+│   ├── naming/               # 네이밍 규칙 모듈
 │   ├── foundation/            # 기본 인프라
 │   │   └── rg/               # Resource Group 모듈
 │   ├── networking/            # 네트워크 관련
@@ -15,12 +16,14 @@
 │   │   ├── agw/                  # Application Gateway 모듈
 │   │   └── pe/               # Private Endpoints + Private DNS Zones 통합
 │   ├── compute/              # 컴퓨팅 리소스
-│   │   └── container-apps/   # Container Apps, VM, Log Analytics
+│   │   ├── container-apps/   # Container Apps, Container App Environment, Log Analytics
+│   │   └── (virtual-machines는 compute 루트 모듈에서 직접 관리)
 │   ├── data/                 # 데이터 저장소 서비스들
 │   │   ├── acr/              # Container Registry
 │   │   ├── keyvault/         # Key Vault
-│   │   ├── cosmos/           # Cosmos DB
-│   │   └── postgres/         # PostgreSQL
+│   │   ├── cdb/              # Cosmos DB
+│   │   ├── postgres/         # PostgreSQL
+│   │   └── afterjob/         # Key Vault Secrets 생성
 │   └── services/             # AI 서비스들
 │       ├── foundry/          # AI Foundry
 │       └── openai/           # OpenAI
@@ -252,6 +255,8 @@ Terraform은 리소스 간 의존성을 자동으로 감지하여 올바른 순�
 
 #### 6단계: Compute 리소스 생성
 - **모듈**: `module.compute`
+  - `module.compute.container_apps`: Container Apps 모듈
+  - `module.compute.virtual_machines`: Virtual Machines 모듈 (선택사항)
 - **의존성**: 
   - `module.rg` (Resource Group)
   - `module.subnets` (Subnet ID)
@@ -259,10 +264,15 @@ Terraform은 리소스 간 의존성을 자동으로 감지하여 올바른 순�
   - `module.afterjob` (Key Vault Secret IDs - `key_vault_secrets` 변수)
 - **생성 시간**: ~5-10분
 - **생성 리소스**:
-  - Log Analytics Workspace (없는 경우)
-  - Container App Environment
-  - Container Apps (FQDN 자동 생성, Key Vault Secrets 사용)
-  - Virtual Machines (선택사항)
+  - **Container Apps** (`module.compute.container_apps`):
+    - Log Analytics Workspace (없는 경우)
+    - Container App Environment
+    - Container Apps (FQDN 자동 생성, Key Vault Secrets 사용)
+  - **Virtual Machines** (`module.compute.virtual_machines`, 선택사항):
+    - Network Interfaces
+    - Public IPs (선택사항)
+    - Linux Virtual Machines
+    - Windows Virtual Machines
 
 **중요**: Container Apps는 `module.afterjob`에서 생성된 Key Vault Secret IDs를 사용하여 Secret을 참조합니다.
 
@@ -300,7 +310,7 @@ Terraform은 리소스 간 의존성을 자동으로 감지하여 올바른 순�
 | 3단계 | Subnets | ~20초 |
 | 4단계 | Infrastructure Services (PaaS) | ~2-10분 (서비스별) |
 | 5단계 | Key Vault Secrets (Afterjob) | ~30초-1분 |
-| 6단계 | Container Apps Environment + Apps | ~5-10분 |
+| 6단계 | Container Apps Environment + Apps + VMs (선택) | ~5-10분 |
 | 7단계 | Application Gateway | ~10-15분 |
 | 8단계 | Private Endpoints (선택사항) | ~5-10분 |
 | **전체** | **모든 리소스** | **~20-35분** |
@@ -359,6 +369,107 @@ terraform apply
 7. **Secret 참조**: Container Apps에서 Key Vault Secret을 사용하는 경우, `secrets` 블록에 정의된 `secret_name`이 `module.afterjob.key_vault_secret_ids`의 키와 일치해야 합니다.
 
 ## 모듈 설명
+
+### Naming 모듈 (`modules/naming/`)
+
+표준화된 네이밍 규칙을 적용하여 리소스 이름을 자동 생성하는 모듈입니다.
+
+**입력 변수:**
+- `project_name`: 프로젝트 이름 (필수)
+- `environment`: 환경 이름 (필수, 예: dev, staging, prod)
+- `purpose`: 용도/기능 (필수, 예: agent, main, search)
+- `asset_management`: 자산관리 식별자 (선택, 예: cae, vm, agw)
+- `sequence_number`: 순번 (선택, 예: 001, 002)
+- `custom_names`: 커스텀 이름 맵 (선택, 특정 리소스 이름 직접 지정)
+
+**출력:**
+- `resource_group`: Resource Group 이름
+- `vnet`: Virtual Network 이름
+- `subnet_name`: Subnet 이름 생성 정보
+- `container_app_environment`: Container App Environment 이름
+- `container_app`: Container App 이름 생성 정보
+- `application_gateway`: Application Gateway 이름
+- `key_vault`: Key Vault 이름
+- `container_registry`: Container Registry 이름
+- `cosmos_db`: Cosmos DB 이름
+- `postgresql`: PostgreSQL 이름
+- `foundry`: AI Foundry 이름
+- `openai`: OpenAI 이름
+- `log_analytics_workspace`: Log Analytics Workspace 이름
+- `storage_account`: Storage Account 이름
+- `names`: 모든 리소스 이름을 포함하는 맵
+
+**사용 예시:**
+```hcl
+module "naming" {
+  source = "./modules/naming"
+  
+  project_name     = "tmp"
+  environment      = "dev"
+  purpose          = "agent"
+  asset_management = "cae"
+  sequence_number  = "001"
+}
+
+# 자동 생성된 이름 사용
+resource_group_name = module.naming.resource_group  # "tmp-dev-agent-rg"
+vnet_name          = module.naming.vnet             # "tmp-dev-agent-vnet"
+```
+
+**명명규칙 형식:**
+- 기본 형식: `{project}-{environment}-{purpose}-{resource_type}[-{sequence}]`
+- 예시: `tmp-dev-agent-rg`, `tmp-dev-agent-vnet`, `tmp-dev-agent-cae-001`
+
+**Azure 리소스별 제약사항:**
+- Container Registry: 영숫자만 허용, 최대 50자
+- Key Vault: 최대 24자
+- Storage Account: 소문자+숫자만, 최대 24자
+- 대부분의 리소스: 하이픈 허용, 최대 63자
+
+### Naming 모듈
+
+#### Naming 모듈 (`modules/naming/`)
+
+표준화된 네이밍 규칙을 적용하여 리소스 이름을 자동 생성하는 모듈입니다.
+
+**입력 변수:**
+- `project_name`: 프로젝트 이름 (필수)
+- `environment`: 환경 이름 (필수, 예: dev, staging, prod)
+- `purpose`: 용도/기능 (필수, 예: agent, main, search)
+- `asset_management`: 자산관리 식별자 (선택, 예: cae, vm, agw)
+- `sequence_number`: 순번 (선택, 예: 001, 002)
+- `custom_names`: 커스텀 이름 맵 (선택, 특정 리소스 이름 직접 지정)
+
+**출력:**
+- `resource_group`: Resource Group 이름
+- `vnet`: Virtual Network 이름
+- `subnet`: Subnet 이름 (키별)
+- `container_app_environment`: Container App Environment 이름
+- `container_app`: Container App 이름 (키별)
+- `application_gateway`: Application Gateway 이름
+- `key_vault`: Key Vault 이름
+- `container_registry`: Container Registry 이름
+- `cosmos_db`: Cosmos DB 이름
+- `postgresql`: PostgreSQL 이름
+- `foundry`: AI Foundry 이름
+- `openai`: OpenAI 이름
+- 기타 리소스별 이름들
+
+**사용 예시:**
+```hcl
+module "naming" {
+  source = "./modules/naming"
+  
+  project_name     = "tmp"
+  environment      = "dev"
+  purpose          = "agent"
+  asset_management = "cae"
+  sequence_number  = "001"
+}
+
+# 자동 생성된 이름 사용
+resource_group_name = module.naming.resource_group  # "tmp-dev-agent-rg"
+```
 
 ### Foundation 모듈
 
@@ -461,9 +572,31 @@ Private Endpoints와 Private DNS Zones를 통합하여 관리하는 모듈입니
 
 ### Compute 모듈
 
+Compute 모듈은 Container Apps와 Virtual Machines를 별도 모듈로 분리하여 관리합니다.
+
+#### Compute 루트 모듈 (`modules/compute/`)
+
+Container Apps와 Virtual Machines 모듈을 통합하여 관리하는 루트 모듈입니다.
+
+**입력 변수:**
+- `resource_group_name`: 리소스 그룹 이름
+- `location`: Azure 지역
+- `container_app_environment_name`: Container App Environment 이름
+- `infrastructure_subnet_id`: Container Apps Environment용 서브넷 ID
+- `log_analytics_workspace_id`: 기존 Log Analytics Workspace ID (선택)
+- `container_apps`: Container App 설정 맵
+- `virtual_machines`: Virtual Machine 설정 맵 (선택)
+- `key_vault_id`: Key Vault ID
+- `key_vault_secrets`: Key Vault Secret ID 맵
+- `tags`: 태그 맵
+
+**출력:**
+- Container Apps 관련 outputs (Container App IDs, FQDNs 등)
+- Virtual Machines 관련 outputs (VM IDs, IP 주소 등)
+
 #### Container Apps 모듈 (`modules/compute/container-apps/`)
 
-Azure Container Apps, Virtual Machines, 그리고 Log Analytics Workspace를 관리하는 모듈입니다.
+Azure Container Apps와 Log Analytics Workspace를 관리하는 모듈입니다.
 
 **입력 변수:**
 - `resource_group_name`: 리소스 그룹 이름
@@ -476,9 +609,9 @@ Azure Container Apps, Virtual Machines, 그리고 Log Analytics Workspace를 관
 - `log_analytics_workspace_sku`: Log Analytics Workspace SKU
 - `log_analytics_retention_days`: Log Analytics 보존 기간 (일)
 - `container_apps`: Container App 설정 맵
-- `virtual_machines`: Virtual Machine 설정 맵 (선택)
 - `key_vault_id`: Key Vault ID (Container Apps에서 시크릿 사용 시)
 - `key_vault_secrets`: Key Vault Secret ID 맵
+- `container_app_identity_type`: Container App Identity 타입 (기본값: "SystemAssigned")
 - `tags`: 태그 맵
 
 **Container App 설정 옵션:**
@@ -494,17 +627,6 @@ Azure Container Apps, Virtual Machines, 그리고 Log Analytics Workspace를 관
 - `ingress`: 인그레스 설정 (외부 접근, 타겟 포트 등)
 - `tags`: 태그 맵
 
-**Virtual Machine 설정 옵션:**
-- `name`: Virtual Machine 이름
-- `size`: VM 크기
-- `subnet_id`: 서브넷 키 이름
-- `os_type`: OS 타입 (Linux 또는 Windows)
-- `admin_username`: 관리자 사용자명
-- `admin_password`: 관리자 비밀번호 (Windows 필수)
-- `admin_ssh_key`: SSH 공개키 (Linux 필수)
-- `source_image_reference`: 소스 이미지 참조
-- 기타 네트워크 및 디스크 설정
-
 **출력:**
 - `log_analytics_workspace_id`: Log Analytics Workspace ID
 - `container_app_environment_id`: Container App Environment ID
@@ -512,7 +634,46 @@ Azure Container Apps, Virtual Machines, 그리고 Log Analytics Workspace를 관
 - `container_app_ids`: Container App ID 맵
 - `container_app_fqdns`: Container App FQDN 맵
 - `container_apps`: Container App 객체 맵
+
+#### Virtual Machines 모듈 (`modules/compute/virtual-machines/`)
+
+Azure Virtual Machines (Linux 및 Windows)를 관리하는 모듈입니다.
+
+**입력 변수:**
+- `resource_group_name`: 리소스 그룹 이름
+- `location`: Azure 지역
+- `virtual_machines`: Virtual Machine 설정 맵
+- `tags`: 태그 맵
+
+**Virtual Machine 설정 옵션:**
+- `name`: Virtual Machine 이름
+- `size`: VM 크기
+- `subnet_id`: 서브넷 ID
+- `os_type`: OS 타입 (Linux 또는 Windows, 기본값: "Linux")
+- `admin_username`: 관리자 사용자명
+- `admin_password`: 관리자 비밀번호 (Windows 필수)
+- `admin_ssh_key`: SSH 공개키 (Linux 필수)
+- `private_ip_address`: Private IP 주소 (선택)
+- `private_ip_address_allocation`: Private IP 할당 방식 (기본값: "Dynamic")
+- `public_ip_enabled`: Public IP 활성화 여부 (기본값: false)
+- `public_ip_allocation_method`: Public IP 할당 방식 (기본값: "Static")
+- `public_ip_sku`: Public IP SKU (기본값: "Standard")
+- `os_disk_caching`: OS 디스크 캐싱 (기본값: "ReadWrite")
+- `os_disk_storage_account_type`: OS 디스크 스토리지 계정 타입 (기본값: "Premium_LRS")
+- `os_disk_size_gb`: OS 디스크 크기 (GB, 선택)
+- `source_image_reference`: 소스 이미지 참조 (publisher, offer, sku, version)
+- `identity_type`: Managed Identity 타입 (선택)
+- `identity_ids`: Managed Identity ID 리스트 (선택)
+- `boot_diagnostics_storage_account_uri`: Boot Diagnostics Storage Account URI (선택)
+- `tags`: 태그 맵
+
+**출력:**
 - `virtual_machine_ids`: Virtual Machine ID 맵
+- `virtual_machine_names`: Virtual Machine 이름 맵
+- `virtual_machine_private_ip_addresses`: Private IP 주소 맵
+- `virtual_machine_public_ip_addresses`: Public IP 주소 맵
+- `network_interface_ids`: Network Interface ID 맵
+- `public_ip_ids`: Public IP ID 맵
 
 ### Data 모듈
 
@@ -521,8 +682,32 @@ Azure Container Apps, Virtual Machines, 그리고 Log Analytics Workspace를 관
 **지원 서비스:**
 - Container Registry (ACR) - `modules/data/acr/`
 - Key Vault - `modules/data/keyvault/`
-- Cosmos DB - `modules/data/cosmos/`
+- Cosmos DB - `modules/data/cdb/`
 - PostgreSQL - `modules/data/postgres/`
+- Afterjob (Key Vault Secrets) - `modules/data/afterjob/`
+
+#### Afterjob 모듈 (`modules/data/afterjob/`)
+
+모든 서비스가 생성된 후 Key Vault에 시크릿을 생성하는 모듈입니다.
+
+**입력 변수:**
+- `key_vault_id`: Key Vault ID
+- `key_vault_enabled`: Key Vault 활성화 여부
+- `create_secrets`: 시크릿 생성 여부
+- `container_registry_enabled`: Container Registry 활성화 여부
+- `acr_login_server`, `acr_admin_username`, `acr_admin_password`: ACR 정보
+- `cdb_enabled`: Cosmos DB 활성화 여부
+- `cdb_endpoint`, `cdb_primary_key`, `cdb_secondary_key`: Cosmos DB 정보
+- `postgresql_enabled`: PostgreSQL 활성화 여부
+- `postgresql_fqdn`, `postgresql_admin_login`, `postgresql_password`: PostgreSQL 정보
+- `foundry_enabled`: Foundry 활성화 여부
+- `foundry_endpoint`: Foundry 엔드포인트
+- `openai_enabled`: OpenAI 활성화 여부
+- `openai_endpoint`, `openai_primary_key`, `openai_secondary_key`: OpenAI 정보
+- `tags`: 태그 맵
+
+**출력:**
+- `key_vault_secret_ids`: Key Vault Secret ID 맵 (Container Apps에서 사용)
 
 ### Services 모듈
 
